@@ -272,7 +272,7 @@ def handle_inline(call):
 
     elif call.data.startswith('cat_mdma_tabs_'):
         city = call.data.split('_',3)[3]
-        build_tab_menu(city, 'mdma_tabs', '🍬 <b>MDMA tabletki</b>', 'mdma2.jpg',
+        build_tab_menu(city, 'mdma_tabs', '🍬 <b>MDMA tabletki</b>', 'mdma.jpg',
                        [(10,20),(25,15),(50,12),(100,11),(250,9),(500,8),(1000,4),(5000,3)])
 
     elif call.data.startswith('cat_kenzo_'):
@@ -403,4 +403,5 @@ def handle_inline(call):
 
 if __name__ == '__main__':
     print("Le Professionnel (naprawione MDMA + przyciski) działa…")
+
     bot.infinity_polling(skip_pending=True)
