@@ -45,11 +45,17 @@ def save_user_order(uid, city, prod, grams, price_pln, crypto, amount_crypto, de
     save_users(users)
 
 def send_panel(chat_id, text, photo_name=None, kb=None):
-    if photo_name and os.path.exists(photo_name):
-        with open(photo_name, 'rb') as img: return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
-    if os.path.exists(FALLBACK_PIC):
-        with open(FALLBACK_PIC, 'rb') as img: return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
-    return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=kb)
+    try:
+        if photo_name and os.path.exists(photo_name):
+            with open(photo_name, 'rb') as img:
+                return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
+        if os.path.exists(FALLBACK_PIC):
+            with open(FALLBACK_PIC, 'rb') as img:
+                return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
+        return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=kb)
+    except Exception as e:
+        print("send_panel error:", e)
+        return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=kb)
 
 def build_main_menu():
     kb = types.InlineKeyboardMarkup(row_width=1)
@@ -81,7 +87,7 @@ def start(message):
     text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n\n"
             f"💰 Saldo: <code>{bal} zł</code>\n"
             f"🛒 Minimalne zamówienie: <b>{MIN_ORDER} zł</b>\n"
-            f"📦 Dead-drop dostępny! g</b>\n\n"
+            f"📦 Dead drop dostępny!\n\n"
             "<blockquote>Jesteśmy dostępni w miastach:\n"
             "• Warszawa\n• Gdańsk\n• Kraków\n• Wrocław\n• Legnica\n• Katowice</blockquote>")
     send_panel(message.chat.id, text, FALLBACK_PIC, build_main_menu())
@@ -95,8 +101,11 @@ def my_profile(call):
             f"💰 Saldo: <code>{bal} zł</code>\n"
             f"📦 Zamówienia: <b>{orders}</b>")
     kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=text, parse_mode='HTML', reply_markup=kb)
+    try:
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                 caption=text, parse_mode='HTML', reply_markup=kb)
+    except:
+        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
 @bot.callback_query_handler(func=lambda call: call.data == 'contact')
 def contact(call):
@@ -359,8 +368,11 @@ def show_cart(call):
         text += f"\n\n❗ Minimum {MIN_ORDER} zł, brakuje <b>{MIN_ORDER-total} zł</b>"
     kb.add(types.InlineKeyboardButton("🗑️ Wyczyść koszyk", callback_data='clear_cart'),
            types.InlineKeyboardButton("⬅️ Start", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=text, parse_mode='HTML', reply_markup=kb)
+    try:
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                 caption=text, parse_mode='HTML', reply_markup=kb)
+    except:
+        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
 @bot.callback_query_handler(func=lambda call: call.data == 'clear_cart')
 def clear_cart(call):
@@ -369,6 +381,12 @@ def clear_cart(call):
     show_cart(call)
 
 # -------------------- CHECKOUT Z WYBOREM DOSTAWY --------------------
+delivery_options = {
+    'inpost'  : 'InPost Paczkomat',
+    'inpost_kur': 'InPost Kurier',
+    'dhl'     : 'DHL'
+}
+
 @bot.callback_query_handler(func=lambda call: call.data == 'checkout')
 def checkout(call):
     uid = call.from_user.id
@@ -378,12 +396,41 @@ def checkout(call):
     bal = get_saldo(uid)
     if bal < total:
         bot.answer_callback_query(call.id, "❗ Za małe saldo – doładuj!", show_alert=True); return
+    text = (f"<b>Wybierz dostawę</b>\n\n"
+            f"Całkowita wartość: <b>{total} zł</b>")
+    kb = types.InlineKeyboardMarkup(row_width=1)
+    for key, name in delivery_options.items():
+        kb.add(types.InlineKeyboardButton(name, callback_data=f'deliver_{key}_{total}'))
+    kb.add(types.InlineKeyboardButton("⬅️ Koszyk", callback_data='show_cart'))
+    try:
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                 caption=text, parse_mode='HTML', reply_markup=kb)
+    except:
+        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('deliver_'))
+def finish_order(call):
+    parts = call.data.split('_')
+    delivery_key, total = parts[1], float(parts[2])
+    delivery_name = delivery_options[delivery_key]
+    uid = call.from_user.id
+    bal = get_saldo(uid)
+    crypto = "usdt"
+    amount_crypto = crypto_amount(total, crypto) or 0
+    city = "Warszawa"
+    for item in cart[uid]:
+        save_user_order(uid, city, item['prod'], item['grams'], item['price'], crypto, amount_crypto, delivery_name)
+    set_saldo(uid, bal - total); cart[uid] = []
     text = (f"✅ <b>Zamówienie zrealizowane!</b>\n\n"
+            f"Metoda dostawy: <b>{delivery_name}</b>\n"
             f"Całkowita wartość: <b>{total} zł</b>\n"
             f"Pozostałe saldo: <code>{get_saldo(uid)} zł</code>")
     kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Start", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=text, parse_mode='HTML', reply_markup=kb)
+    try:
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                 caption=text, parse_mode='HTML', reply_markup=kb)
+    except:
+        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
 # -------------------- TOP-UP (BEZ ZMIAN) --------------------
 CRYPTO_ADDRS = {
@@ -458,5 +505,3 @@ def topup_payment(call):
 if __name__ == '__main__':
     print("Le Professionnel – gotowy do działania…")
     bot.infinity_polling(skip_pending=True)
-
-
