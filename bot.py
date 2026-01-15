@@ -7,7 +7,7 @@ ADMIN_ID = 6029446099
 FALLBACK_PIC = 'leprofessionnel.jpg'
 
 MAIN_CHAN   = 'https://t.me/+8VLpDp5-Cqc4OTI0'
-OPINIE_CHAN = 'https://t.me/c/3635144020/28'
+OPINIE_CHAN = 'https://t.me/+azuEqt5vmg8wODk0'
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache = {}, {}
@@ -377,3 +377,4 @@ def handle_inline(call):
 if __name__ == '__main__':
     print("Le Professionnel (zdjęcie na powitalce + poprawione powroty) działa…")
     bot.infinity_polling(skip_pending=True)
+
