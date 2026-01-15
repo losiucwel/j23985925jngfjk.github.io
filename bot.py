@@ -81,7 +81,7 @@ def start(message):
     text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n\n"
             f"💰 Saldo: <code>{bal} zł</code>\n"
             f"🛒 Minimalne zamówienie: <b>{MIN_ORDER} zł</b>\n"
-            f"📦 Dead-drop już od <b>{MIN_DEAD} g</b>\n\n"
+            f"📦 Dead-drop dostępny! g</b>\n\n"
             "<blockquote>Jesteśmy dostępni w miastach:\n"
             "• Warszawa\n• Gdańsk\n• Kraków\n• Wrocław\n• Legnica\n• Katowice</blockquote>")
     send_panel(message.chat.id, text, FALLBACK_PIC, build_main_menu())
@@ -458,4 +458,5 @@ def topup_payment(call):
 if __name__ == '__main__':
     print("Le Professionnel – gotowy do działania…")
     bot.infinity_polling(skip_pending=True)
+
 
