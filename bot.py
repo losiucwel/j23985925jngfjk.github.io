@@ -4,7 +4,7 @@ import uuid, os, json, time, requests
 
 TOKEN   = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
 ADMIN_ID = 6029446099
-GROUP_LINK = 'https://t.me/+TwojLink'   # <-- zmień na swój
+GROUP_LINK = 'https://t.me/+8VLpDp5-Cqc4OTI0'   # <-- zmień na swój
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache = {}, {}
@@ -335,3 +335,4 @@ def handle_inline(call):
 if __name__ == '__main__':
     print("Le Professionnel (z przyciskiem Grupa TG + poprawione mdma.jpg) działa…")
     bot.infinity_polling(skip_pending=True)
+
