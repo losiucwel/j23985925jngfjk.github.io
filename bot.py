@@ -434,11 +434,13 @@ def clear_cart(call):
     bot.answer_callback_query(call.id, "🗑️ Koszyk wyczyszczony")
     show_cart(call)
 
-# -------------------- DOSTAWA --------------------
+# -------------------- DOSTAWA Z CENAMI --------------------
 delivery_options = {
-    'inpost'  : 'InPost Paczkomat',
-    'inpost_kur': 'InPost Kurier',
-    'dhl'     : 'DHL'
+    'inpost'  : 'InPost Paczkomat – 40 zł',
+    'poczta'  : 'Poczta – 40 zł',
+    'dpd'     : 'DPD – 40 zł',
+    'znaczek' : 'Znaczek Pocztowy – 40 zł',
+    'deadrop' : 'Dead-drop – 0 zł'
 }
 
 @bot.callback_query_handler(func=lambda call: call.data == 'checkout')
