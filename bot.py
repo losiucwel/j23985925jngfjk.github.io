@@ -6,10 +6,8 @@ TOKEN   = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
 ADMIN_ID = 6029446099
 FALLBACK_PIC = 'leprofessionnel.jpg'
 
-# ----------  LINKI DO KANAŁÓW  ----------
 MAIN_CHAN   = 'https://t.me/+8VLpDp5-Cqc4OTI0'
 OPINIE_CHAN = 'https://t.me/c/3635144020/28'
-# ----------------------------------------
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache = {}, {}
@@ -47,16 +45,13 @@ def save_user_order(uid, city, prod, grams, price_pln, crypto, amount_crypto, de
     save_users(users)
 
 def send_panel(chat_id, text, photo_name=None, kb=None):
-    # jeśli podano zdjęcie i istnieje – wyślij je
     if photo_name and os.path.exists(photo_name):
         with open(photo_name, 'rb') as img:
             return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
-    # jeśli podano zdjęcie, ale nie istnieje – wyślij fallback
     if photo_name:
         if os.path.exists(FALLBACK_PIC):
             with open(FALLBACK_PIC, 'rb') as img:
                 return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
-    # w pozostałych przypadkach – zwykła wiadomość
     return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=kb)
 
 # ----------  NOWY PRZYCISK „GRUPA TG”  ----------
@@ -64,7 +59,7 @@ def build_channel_menu():
     kb = types.InlineKeyboardMarkup(row_width=1)
     kb.add(types.InlineKeyboardButton("📣 Główny kanał", url=MAIN_CHAN),
            types.InlineKeyboardButton("⭐ Opinie", url=OPINIE_CHAN),
-           types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_cities'))
+           types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
     return kb
 # -----------------------------------------------
 
@@ -80,7 +75,8 @@ def start(message):
     kb.add(*[types.InlineKeyboardButton(c, callback_data=f'city_{c}') for c in cities])
     kb.row(types.InlineKeyboardButton("📢 Grupa TG", callback_data='channel_menu'),
            types.InlineKeyboardButton("🏠 Home", callback_data='home'))
-    send_panel(message.chat.id, text, kb=kb)
+    # ⬇️⬇️⬇️  WYSYŁAMY ZDJĘCIE  ⬇️⬇️⬇️
+    send_panel(message.chat.id, text, FALLBACK_PIC, kb)
 
 @bot.message_handler(commands=['saldo'])
 def cmd_saldo(message):
@@ -109,6 +105,11 @@ def handle_inline(call):
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id,
                                       reply_markup=build_channel_menu())
         return
+    if call.data == 'back_to_start':
+        start(call.message)
+        try: bot.delete_message(call.message.chat.id, call.message.message_id)
+        except: pass
+        return
     # --------------------------------------
 
     if call.data.startswith('city_'):
@@ -135,9 +136,15 @@ def handle_inline(call):
             types.InlineKeyboardButton("⚡ Amfa sucha", callback_data=f'cat_amfa_{city}'),
             types.InlineKeyboardButton("🍯 Żywica THC 90%", callback_data=f'cat_zywica_{city}')
         )
-        kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_cities'), types.InlineKeyboardButton("🏠 Home", callback_data='home'))
+        kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'), types.InlineKeyboardButton("🏠 Home", callback_data='home'))
         bot.delete_message(call.message.chat.id, call.message.message_id)
         send_panel(call.message.chat.id, text, kb=kb); return
+
+    if call.data == 'back_to_start':
+        start(call.message)
+        try: bot.delete_message(call.message.chat.id, call.message.message_id)
+        except: pass
+        return
 
     if call.data == 'back_to_cities':
         bal = get_saldo(uid)
@@ -150,6 +157,34 @@ def handle_inline(call):
         kb.add(*[types.InlineKeyboardButton(c, callback_data=f'city_{c}') for c in cities])
         kb.row(types.InlineKeyboardButton("📢 Grupa TG", callback_data='channel_menu'),
                types.InlineKeyboardButton("🏠 Home", callback_data='home'))
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        send_panel(call.message.chat.id, text, FALLBACK_PIC, kb); return
+
+    if call.data.startswith('back_to_cats_'):
+        city = call.data.split('_',3)[3]
+        bal = get_saldo(uid)
+        text = (f"📍 <b>Miasto:</b> <code>{city}</code>  |  💰 Saldo: <code>{bal} zł</code>\n\n"
+                "━━━━━━━━━━━━━━━\n📋 <b>CENNIK Le Professionnel</b>\n━━━━━━━━━━━━━━━\n\n<b>Wybierz kategorię:</b>")
+        kb = types.InlineKeyboardMarkup(row_width=1)
+        kb.add(
+            types.InlineKeyboardButton("🌨️❄️ Czysta kokaina", callback_data=f'cat_kokaina_{city}'),
+            types.InlineKeyboardButton("🌿🇺🇸 Marihuana InDoor z USA", callback_data=f'cat_weed_{city}'),
+            types.InlineKeyboardButton("💊 3-CMC", callback_data=f'cat_3cmc_{city}'),
+            types.InlineKeyboardButton("🔬 4-CMC", callback_data=f'cat_4cmc_{city}'),
+            types.InlineKeyboardButton("💉 KETAMINA – IGŁY", callback_data=f'cat_ketaigly_{city}'),
+            types.InlineKeyboardButton("🍬 KETAMINA – KAMUŁEK", callback_data=f'cat_ketakamulec_{city}'),
+            types.InlineKeyboardButton("🍄 LSD Mario ‹3 250 µg", callback_data=f'cat_lsd_{city}'),
+            types.InlineKeyboardButton("🧪 HEROINA", callback_data=f'cat_heroina_{city}'),
+            types.InlineKeyboardButton("🍾 MDMA kryształ", callback_data=f'cat_mdma_krys_{city}'),
+            types.InlineKeyboardButton("🍬 MDMA tabletki", callback_data=f'cat_mdma_tabs_{city}'),
+            types.InlineKeyboardButton("💊 4MMC Kenzo 280mg", callback_data=f'cat_kenzo_{city}'),
+            types.InlineKeyboardButton("🌸 TUCI / Różowa Kokaina", callback_data=f'cat_tuci_{city}'),
+            types.InlineKeyboardButton("❄️ PIKO METH", callback_data=f'cat_piko_{city}'),
+            types.InlineKeyboardButton("🟤 2CB 25mg", callback_data=f'cat_2cb_{city}'),
+            types.InlineKeyboardButton("⚡ Amfa sucha", callback_data=f'cat_amfa_{city}'),
+            types.InlineKeyboardButton("🍯 Żywica THC 90%", callback_data=f'cat_zywica_{city}')
+        )
+        kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data=f'back_to_cities'), types.InlineKeyboardButton("🏠 Home", callback_data='home'))
         bot.delete_message(call.message.chat.id, call.message.message_id)
         send_panel(call.message.chat.id, text, kb=kb); return
 
@@ -340,5 +375,5 @@ def handle_inline(call):
         bot.answer_callback_query(call.id, "⏳ Sprawdzam… funkcja wkrótce!", show_alert=True)
 
 if __name__ == '__main__':
-    print("Le Professionnel (poprawione przyciski + 2 linki TG) działa…")
+    print("Le Professionnel (zdjęcie na powitalce + poprawione powroty) działa…")
     bot.infinity_polling(skip_pending=True)
