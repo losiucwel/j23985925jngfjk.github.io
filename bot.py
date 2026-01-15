@@ -8,6 +8,7 @@ FALLBACK_PIC = 'leprofessionnel.jpg'
 
 MAIN_CHAN   = 'https://t.me/+8VLpDp5-Cqc4OTI0'
 OPINIE_CHAN = 'https://t.me/c/3635144020/28'
+CONTACT_USER = '@LeProfessionnel_operator'
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache, top_up_cache = {}, {}, {}
@@ -67,7 +68,8 @@ def build_main_menu():
         types.InlineKeyboardButton("👤 Mój profil", callback_data='my_profile'),
         types.InlineKeyboardButton("💵 Doładuj saldo", callback_data='top_up'),
         types.InlineKeyboardButton("📋 Cennik", callback_data='price_list'),
-        types.InlineKeyboardButton("📢 Grupa TG", callback_data='channel_menu')
+        types.InlineKeyboardButton("📢 Grupa TG", callback_data='channel_menu'),
+        types.InlineKeyboardButton("📞 Kontakt", callback_data='contact')
     )
     return kb
 
@@ -101,6 +103,14 @@ def my_profile(call):
                              caption=text,
                              parse_mode='HTML',
                              reply_markup=kb)
+
+# ===============  KONTAKT  ===============
+@bot.callback_query_handler(func=lambda call: call.data == 'contact')
+def contact(call):
+    text = f"📞 <b>Kontakt</b>\n\nNapisz do operatora:\n{CONTACT_USER}"
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
+    bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
 # ===============  TOP-UP  ===============
 @bot.callback_query_handler(func=lambda call: call.data == 'top_up')
@@ -234,11 +244,7 @@ def price_list(call):
     )
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id,
-                             message_id=call.message.message_id,
-                             caption=text,
-                             parse_mode='HTML',
-                             reply_markup=kb)
+    bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
 # ===============  POWROTY  ===============
 @bot.callback_query_handler(func=lambda call: call.data == 'back_to_start')
@@ -254,5 +260,5 @@ def channel_menu(call):
 
 # ===============  START  ===============
 if __name__ == '__main__':
-    print("Le Professionnel (HTML poprawiony) działa…")
+    print("Le Professionnel (Kontakt + Cennik naprawiony) działa…")
     bot.infinity_polling(skip_pending=True)
