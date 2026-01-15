@@ -29,8 +29,7 @@ def fetch_rates():
 
 def crypto_amount(pln_amount, crypto):
     rates = fetch_rates()
-    if rates is None:
-        return None
+    if rates is None: return None
     return pln_amount / rates.get(crypto, 1)
 
 USERS_FILE = 'users.json'
@@ -65,11 +64,8 @@ def send_panel(chat_id, text, photo_name=None, kb=None):
 def start(message):
     uid = message.from_user.id
     bal = get_saldo(uid)
-    text = (
-        f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n"
-        f"💰 Saldo: <code>{bal} zł</code>\n\n"
-        f"📍 <b>Wybierz miasto:</b>"
-    )
+    text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n"
+            f"💰 Saldo: <code>{bal} zł</code>\n\n📍 <b>Wybierz miasto:</b>")
     kb = types.InlineKeyboardMarkup(row_width=2)
     cities = ["Wrocław", "Legnica", "Warszawa", "Katowice", "Gdańsk", "Kraków"]
     kb.add(*[types.InlineKeyboardButton(c, callback_data=f'city_{c}') for c in cities])
@@ -96,8 +92,7 @@ def reset_chat(message):
         try:
             bot.delete_message(chat_id, i)
             deleted += 1
-        except:
-            continue
+        except: continue
     bot.send_message(chat_id, f"✅ Usunięto {deleted} wiadomości. Czat czysty.")
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -108,13 +103,8 @@ def handle_inline(call):
         city = call.data.split('_',1)[1]
         user_cache[uid] = {'city': city}
         bal = get_saldo(uid)
-        text = (
-            f"📍 <b>Miasto:</b> <code>{city}</code>  |  💰 Saldo: <code>{bal} zł</code>\n\n"
-            f"━━━━━━━━━━━━━━━\n"
-            f"📋 <b>CENNIK Le Professionnel</b>\n"
-            f"━━━━━━━━━━━━━━━\n\n"
-            f"<b>Wybierz kategorię:</b>"
-        )
+        text = (f"📍 <b>Miasto:</b> <code>{city}</code>  |  💰 Saldo: <code>{bal} zł</code>\n\n"
+                "━━━━━━━━━━━━━━━\n📋 <b>CENNIK Le Professionnel</b>\n━━━━━━━━━━━━━━━\n\n<b>Wybierz kategorię:</b>")
         kb = types.InlineKeyboardMarkup(row_width=1)
         kb.add(
             types.InlineKeyboardButton("🌨️❄️ Czysta kokaina", callback_data=f'cat_kokaina_{city}'),
@@ -142,11 +132,8 @@ def handle_inline(call):
 
     if call.data == 'back_to_cities':
         bal = get_saldo(uid)
-        text = (
-            f"👋 <b>Le Professionnel</b> – witaj {call.from_user.first_name}!\n"
-            f"💰 Saldo: <code>{bal} zł</code>\n\n"
-            f"📍 <b>Wybierz miasto:</b>"
-        )
+        text = (f"👋 <b>Le Professionnel</b> – witaj {call.from_user.first_name}!\n"
+                f"💰 Saldo: <code>{bal} zł</code>\n\n📍 <b>Wybierz miasto:</b>")
         kb = types.InlineKeyboardMarkup(row_width=2)
         cities = ["Wrocław", "Legnica", "Warszawa", "Katowice", "Gdańsk", "Kraków"]
         kb.add(*[types.InlineKeyboardButton(c, callback_data=f'city_{c}') for c in cities])
@@ -158,13 +145,8 @@ def handle_inline(call):
     if call.data.startswith('back_to_cats_'):
         city = call.data.split('_',3)[3]
         bal = get_saldo(uid)
-        text = (
-            f"📍 <b>Miasto:</b> <code>{city}</code>  |  💰 Saldo: <code>{bal} zł</code>\n\n"
-            f"━━━━━━━━━━━━━━━\n"
-            f"📋 <b>CENNIK Le Professionnel</b>\n"
-            f"━━━━━━━━━━━━━━━\n\n"
-            f"<b>Wybierz kategorię:</b>"
-        )
+        text = (f"📍 <b>Miasto:</b> <code>{city}</code>  |  💰 Saldo: <code>{bal} zł</code>\n\n"
+                "━━━━━━━━━━━━━━━\n📋 <b>CENNIK Le Professionnel</b>\n━━━━━━━━━━━━━━━\n\n<b>Wybierz kategorię:</b>")
         kb = types.InlineKeyboardMarkup(row_width=1)
         kb.add(
             types.InlineKeyboardButton("🌨️❄️ Czysta kokaina", callback_data=f'cat_kokaina_{city}'),
@@ -202,8 +184,7 @@ def handle_inline(call):
             total = grams * price_per_g
             kb.add(types.InlineKeyboardButton(
                 f"{emoji} {grams}g – {total:,} PLN",
-                callback_data=f'order_{prod_key}_{city}_{grams}_{total}'
-            ))
+                callback_data=f'order_{prod_key}_{city}_{grams}_{total}'))
         kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data=f'back_to_cats_{city}'),
                types.InlineKeyboardButton("🏠 Home", callback_data='home'))
         bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -218,8 +199,7 @@ def handle_inline(call):
             total = tabs * price_per_tab
             kb.add(types.InlineKeyboardButton(
                 f"{emoji} {tabs} szt – {total:,} PLN",
-                callback_data=f'order_{prod_key}_{city}_{tabs}_{total}'
-            ))
+                callback_data=f'order_{prod_key}_{city}_{tabs}_{total}'))
         kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data=f'back_to_cats_{city}'),
                types.InlineKeyboardButton("🏠 Home", callback_data='home'))
         bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -229,82 +209,68 @@ def handle_inline(call):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'kokaina', '❄️ <b>Czysta kokaina</b>', 'koko.jpg',
                         [(1,300),(5,300),(10,240),(25,200),(50,160),(100,140),(1000,125)])
-
     elif call.data.startswith('cat_weed_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'weed', '🌿 <b>Marihuana InDoor z USA 🇺🇸</b>', 'zip.jpg',
                         [(5,32),(10,32),(25,30),(50,28),(100,26),(250,23),(500,22),(1000,21)])
-
     elif call.data.startswith('cat_3cmc_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, '3cmc', '💊 <b>3-CMC</b>', '3cmc.jpg',
                         [(5,50),(10,28),(25,23),(50,21),(100,19),(250,18),(500,15),(1000,12)])
-
     elif call.data.startswith('cat_4cmc_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, '4cmc', '🔬 <b>4-CMC</b>', '4cmc.jpg',
                         [(5,50),(10,28),(25,23),(50,21),(100,19),(250,15),(500,13),(1000,11)])
-
     elif call.data.startswith('cat_ketaigly_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'ketaigly', '💉 <b>KETAMINA – IGŁY</b>', 'ketaigly.jpg',
                         [(1,75),(3,70),(5,60),(10,45),(20,40),(30,35),(40,32),(50,26),(100,16),(200,15)])
-
     elif call.data.startswith('cat_ketakamulec_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'ketakamulec', '🍬 <b>KETAMINA – KAMUŁEK</b>', 'ketakamulec.jpg',
                         [(1,75),(3,70),(5,60),(10,45),(20,40),(30,35),(40,32),(50,26),(100,16),(200,15)])
-
     elif call.data.startswith('cat_lsd_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'lsd', '🍄 <b>LSD Mario ‹3 250 µg</b>', 'lsd.jpg',
                         [(10,15),(50,10),(100,9),(200,8),(300,7),(400,6),(500,5),(1000,4.8)])
-
     elif call.data.startswith('cat_heroina_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'heroina', '🧪 <b>HEROINA</b>', 'h.jpg',
                         [(1,200),(5,850),(10,1600),(25,3500),(50,5900),(100,10000)])
-
     elif call.data.startswith('cat_mdma_krys_'):
         city = call.data.split('_',3)[3]
         build_gram_menu(city, 'mdma_krys', '🍾 <b>MDMA szampański kryształ</b>', 'mdma2.jpg',
                         [(1,60),(5,50),(10,45),(25,43),(50,38),(100,30),(250,25),(500,22)])
-
     elif call.data.startswith('cat_mdma_tabs_'):
         city = call.data.split('_',3)[3]
-        build_tab_menu(city, 'mdma_tabs', '🍬 <b>MDMA tabletki</b>', 'mdma.jpg',
+        build_tab_menu(city, 'mdma_tabs', '🍬 <b>MDMA tabletki</b>', 'mdma2.jpg',
                        [(10,20),(25,15),(50,12),(100,11),(250,9),(500,8),(1000,4),(5000,3)])
-
     elif call.data.startswith('cat_kenzo_'):
         city = call.data.split('_',2)[2]
         build_tab_menu(city, 'kenzo', '💊 <b>4MMC Kenzo 280mg</b>', 'kenzo.jpg',
                        [(50,11),(100,10),(500,6)])
-
     elif call.data.startswith('cat_tuci_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'tuci', '🌸 <b>TUCI / Różowa Kokaina</b>', 'TUCI.jpg',
                         [(1,140),(2,125),(3,120),(4,110),(5,100),(10,95),(20,90),(30,80),(40,75),(50,70),(100,65),(200,50),(500,45)])
-
     elif call.data.startswith('cat_piko_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'piko', '❄️ <b>PIKO METH</b>', 'piko.jpg',
                         [(1,180),(5,160),(10,150),(25,130),(50,110),(100,90)])
-
     elif call.data.startswith('cat_2cb_'):
         city = call.data.split('_',2)[2]
         build_tab_menu(city, '2cb', '🟤 <b>2CB 25mg</b>', '2cb.jpg',
                        [(10,22),(50,13.6),(100,11),(500,6),(1000,5.3)])
-
     elif call.data.startswith('cat_amfa_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'amfa', '⚡ <b>Sucha amfetamina</b>', 'amfa.jpg',
                         [(5,30),(10,25),(25,20),(50,16),(100,12),(250,10),(500,9)])
-
     elif call.data.startswith('cat_zywica_'):
         city = call.data.split('_',2)[2]
         build_gram_menu(city, 'zywica', '🍯 <b>Żywica THC 90%</b>', 'zip2.jpg',
                         [(1,220),(2,175),(5,140),(10,100),(50,70),(100,60)])
 
+    # --- WYBÓR METODY DOSTAWY ---
     elif call.data.startswith('order_'):
         parts = call.data.split('_')
         prod, city, grams, total_price = parts[1], parts[2], float(parts[3]), float(parts[4])
@@ -313,41 +279,61 @@ def handle_inline(call):
         if bal < total_price:
             bot.answer_callback_query(call.id, f"❗ Brak środków – potrzeba {total_price:.2f} zł", show_alert=True)
             return
-        user_cache[uid]['delivery'] = 'Dead drop'
-        user_cache[uid]['final_price'] = total_price
-        text = (
-            f"<b>Le Professionnel</b>\n"
-            f"📦 Towar: <b>{prod.upper()} {grams} g</b>\n"
-            f"📍 Miasto: {city}\n"
-            f"📦 Dostawa: <b>Dead drop</b>\n"
-            f"💰 Do zapłaty: <b>{total_price:.2f} zł</b>\n\n"
-            f"Wybierz metodę płatności:"
-        )
-        kb = types.InlineKeyboardMarkup(row_width=2)
+        text = (f"<b>Le Professionnel</b>\n"
+                f"📦 Towar: <b>{prod.upper()} {grams} g</b>\n"
+                f"📍 Miasto: {city}\n"
+                f"💰 Do zapłaty: <b>{total_price:.2f} zł</b>\n\n"
+                f"<b>Wybierz metodę dostawy:</b>")
+        kb = types.InlineKeyboardMarkup(row_width=1)
         kb.add(
-            types.InlineKeyboardButton("📞 BLIK / przelew", callback_data=f'pay_tel_{prod}_{city}_{total_price}_dead'),
-            types.InlineKeyboardButton("ETH / USDT", callback_data=f'pay_eth_{prod}_{city}_{total_price}_dead'),
-            types.InlineKeyboardButton("USDT (TRON)", callback_data=f'pay_tron_{prod}_{city}_{total_price}_dead'),
-            types.InlineKeyboardButton("BTC", callback_data=f'pay_btc_{prod}_{city}_{total_price}_dead'),
-            types.InlineKeyboardButton("LTC", callback_data=f'pay_ltc_{prod}_{city}_{total_price}_dead'),
-            types.InlineKeyboardButton("TON", callback_data=f'pay_ton_{prod}_{city}_{total_price}_dead'),
-            types.InlineKeyboardButton("XMR Monero", callback_data=f'pay_xmr_{prod}_{city}_{total_price}_dead'),
-            types.InlineKeyboardButton("SOL Solana", callback_data=f'pay_sol_{prod}_{city}_{total_price}_dead')
+            types.InlineKeyboardButton("📦 InPost", callback_data=f'delivery_inpost_{prod}_{city}_{grams}_{total_price}'),
+            types.InlineKeyboardButton("📬 Paczkomat", callback_data=f'delivery_paczkomat_{prod}_{city}_{grams}_{total_price}'),
+            types.InlineKeyboardButton("🕳️ Dead drop", callback_data=f'delivery_dead_{prod}_{city}_{grams}_{total_price}')
         )
         kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data=f'back_to_cats_{city}'),
                types.InlineKeyboardButton("🏠 Home", callback_data='home'))
         bot.delete_message(call.message.chat.id, call.message.message_id)
         send_panel(call.message.chat.id, text, kb=kb)
 
+    # --- WYBÓR PŁATNOŚCI ---
+    elif call.data.startswith('delivery_'):
+        _, delivery_raw, prod, city, grams, total_price = call.data.split('_')
+        delivery_map = {'inpost':'InPost','paczkomat':'Paczkomat','dead':'Dead drop'}
+        delivery_name = delivery_map[delivery_raw]
+        user_cache[uid]['delivery'] = delivery_name
+        user_cache[uid]['final_price'] = float(total_price)
+        text = (f"<b>Le Professionnel</b>\n"
+                f"📦 Towar: <b>{prod.upper()} {grams} g</b>\n"
+                f"📍 Miasto: {city}\n"
+                f"📦 Dostawa: <b>{delivery_name}</b>\n"
+                f"💰 Do zapłaty: <b>{float(total_price):.2f} zł</b>\n\n"
+                f"Wybierz metodę płatności:")
+        kb = types.InlineKeyboardMarkup(row_width=2)
+        kb.add(
+            types.InlineKeyboardButton("📞 BLIK / przelew", callback_data=f'pay_tel_{prod}_{city}_{total_price}_{delivery_raw}'),
+            types.InlineKeyboardButton("ETH / USDT", callback_data=f'pay_eth_{prod}_{city}_{total_price}_{delivery_raw}'),
+            types.InlineKeyboardButton("USDT (TRON)", callback_data=f'pay_tron_{prod}_{city}_{total_price}_{delivery_raw}'),
+            types.InlineKeyboardButton("BTC", callback_data=f'pay_btc_{prod}_{city}_{total_price}_{delivery_raw}'),
+            types.InlineKeyboardButton("LTC", callback_data=f'pay_ltc_{prod}_{city}_{total_price}_{delivery_raw}'),
+            types.InlineKeyboardButton("TON", callback_data=f'pay_ton_{prod}_{city}_{total_price}_{delivery_raw}'),
+            types.InlineKeyboardButton("XMR Monero", callback_data=f'pay_xmr_{prod}_{city}_{total_price}_{delivery_raw}'),
+            types.InlineKeyboardButton("SOL Solana", callback_data=f'pay_sol_{prod}_{city}_{total_price}_{delivery_raw}')
+        )
+        kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data=f'order_{prod}_{city}_{grams}_{total_price}'),
+               types.InlineKeyboardButton("🏠 Home", callback_data='home'))
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        send_panel(call.message.chat.id, text, kb=kb)
+
+    # --- EKRAN PŁATNOŚCI ---
     elif call.data.startswith('pay_'):
         parts = call.data.split('_')
-        method, prod, city, final_price, delivery_type = parts[1], parts[2], parts[3], float(parts[4]), parts[5]
+        method, prod, city, final_price, delivery_raw = parts[1], parts[2], parts[3], float(parts[4]), parts[5]
         pay_id = str(uuid.uuid4())
         crypto_val = crypto_amount(final_price, method)
         if crypto_val is None:
             bot.answer_callback_query(call.id, "❗ Błąd pobierania kursów walut", show_alert=True)
             return
-        min_dep = 0.00003 if method in ('btc', 'ltc', 'eth', 'tron') else 0.1
+        min_dep = 0.00003 if method in ('btc','ltc','eth','tron') else 0.1
         addr = {
             'eth': '0x05e8c9e064d52C3F63b278B8120C53e49E70e26c',
             'tron': 'TVCeVXceuZtiQ9sZj3j4mDQ87Zw9NfvG3T',
@@ -357,24 +343,22 @@ def handle_inline(call):
             'xmr': '46yz1JJP9k8GTgN3Vb5mYYCJgQWgXJHmXJtF5yU7L9fH9Y3L9fH9Y3L9fH9',
             'sol': 'SoLWl1234567890abcdef'
         }.get(method, '-')
-        text = (
-            f"<b>Le Professionnel</b>\n"
-            f"ID płatności: <code>{pay_id}</code>\n\n"
-            f"💳 Metoda: <b>{method.upper()}</b>\n"
-            f"📨 Adres: <code>{addr}</code>\n\n"
-            f"💰 Kwota do zapłaty: <b>{crypto_val:.6f} {method.upper()}</b>\n"
-            f"⏳ Czas: <b>29 minut</b>\n\n"
-            f"⚠️ Wyślij dokładnie <b>{crypto_val:.6f}</b> (min. {min_dep}) jednym przelewem – inaczej środki przepadną!"
-        )
+        delivery_name = {'dead':'Dead drop','inpost':'InPost','paczkomat':'Paczkomat'}.get(delivery_raw,'-')
+        text = (f"<b>Le Professionnel</b>\n"
+                f"ID płatności: <code>{pay_id}</code>\n\n"
+                f"💳 Metoda: <b>{method.upper()}</b>\n"
+                f"📨 Adres: <code>{addr}</code>\n\n"
+                f"💰 Kwota do zapłaty: <b>{crypto_val:.6f} {method.upper()}</b>\n"
+                f"⏳ Czas: <b>29 minut</b>\n\n"
+                f"⚠️ Wyślij dokładnie <b>{crypto_val:.6f}</b> (min. {min_dep}) jednym przelewem – inaczej środki przepadną!")
         kb = types.InlineKeyboardMarkup(row_width=1)
         kb.add(types.InlineKeyboardButton("📋 Kopiuj dane", callback_data=f'copy_{method}'),
                types.InlineKeyboardButton("✅ Sprawdzam płatność", callback_data=f'check_{pay_id}'))
-        kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data=f'order_{prod}_{city}_{final_price}_{delivery_type}'),
+        kb.row(types.InlineKeyboardButton("⬅️ Powrót", callback_data=f'delivery_{delivery_raw}_{prod}_{city}_{user_cache[uid]["grams"]}_{final_price}'),
                types.InlineKeyboardButton("🏠 Home", callback_data='home'))
         bot.delete_message(call.message.chat.id, call.message.message_id)
         send_panel(call.message.chat.id, text, kb=kb)
 
-        delivery_name = "Dead drop"
         grams = user_cache[uid]['grams']
         save_user_order(uid, city, prod, grams, final_price, method, crypto_val, delivery_name)
 
@@ -402,6 +386,5 @@ def handle_inline(call):
         bot.answer_callback_query(call.id, "⏳ Sprawdzam… funkcja wkrótce!", show_alert=True)
 
 if __name__ == '__main__':
-    print("Le Professionnel (naprawione MDMA + przyciski) działa…")
-
+    print("Le Professionnel (z wyborem dostawy InPost/Paczkomat/Dead drop) działa…")
     bot.infinity_polling(skip_pending=True)
