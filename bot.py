@@ -11,8 +11,7 @@ CONTACT_USER = '@LeProfessionnel_operator'
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache, top_up_cache, cart = {}, {}, {}, {}
-MIN_ORDER = 300   # bez zmian
-MIN_DEAD  = 1     # bez zmian
+MIN_ORDER = 300
 
 # -------------------- pomocnicze --------------------
 def get_saldo(uid): return saldo_db.get(uid, 0)
@@ -81,7 +80,9 @@ def start(message):
     text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n\n"
             f"💰 Saldo: <code>{bal} zł</code>\n"
             f"🛒 Minimalne zamówienie: <b>{MIN_ORDER} zł</b>\n"
-            f"📦 Dead-drop już od <b>{MIN_DEAD} g</b>")
+            f"📦 Dead-drop już od <b>{MIN_DEAD} g</b>\n\n"
+            "<blockquote>Jesteśmy dostępni w miastach:\n"
+            "• Warszawa\n• Gdańsk\n• Kraków\n• Wrocław\n• Legnica\n• Katowice</blockquote>")
     send_panel(message.chat.id, text, FALLBACK_PIC, build_main_menu())
 
 # -------------------- PROFILE / KONTAKT / POWROTY --------------------
@@ -275,24 +276,24 @@ def price_list_info(call):
     kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
     bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
-# -------------------- NOWY SKLEP Z PRZYCISKAMI --------------------
+# -------------------- NOWY SKLEP Z FOTKAMI --------------------
 PRODUCTS = {
-    "Kokaina": {"unit": "g", "items": {"1":300,"5":300,"10":240,"25":200,"50":160,"100":140,"1000":125}},
-    "Marihuana InDoor z USA": {"unit": "g", "items": {"5":32,"10":32,"25":30,"50":28,"100":26,"250":23,"500":22,"1000":21}},
-    "MDMA tabletki 270 mg": {"unit": "szt", "items": {"10":20,"25":15,"50":12,"100":11,"250":9,"500":8,"1000":4,"5000":3}},
-    "MDMA kryształ": {"unit": "g", "items": {"1":60,"5":50,"10":45,"25":43,"50":38,"100":30,"250":25,"500":22}},
-    "Sucha amfetamina": {"unit": "g", "items": {"5":30,"10":25,"25":20,"50":16,"100":12,"250":10,"500":9}},
-    "4MMC Kenzo 280 mg": {"unit": "szt", "items": {"50":550,"100":1000,"500":3000}},
-    "3-CMC": {"unit": "g", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":18,"500":15,"1000":12}},
-    "4-CMC": {"unit": "g", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":15,"500":13,"1000":11}},
-    "TUCI / Różowa Kokaina": {"unit": "g", "items": {"1":140,"2":125,"3":120,"4":110,"5":100,"10":95,"20":90,"30":80,"40":75,"50":70,"100":65,"200":50,"500":45}},
-    "KETAMINA – IGŁY": {"unit": "g", "items": {"1":75,"3":70,"5":60,"10":45,"20":40,"30":35,"40":32,"50":26,"100":16,"200":15}},
-    "KETAMINA – KAMIENIE": {"unit": "g", "items": {"1":75,"3":70,"5":60,"10":45,"20":40,"30":35,"40":32,"50":26,"100":16,"200":15}},
-    "LSD Mario 250 µg": {"unit": "szt", "items": {"10":15,"50":10,"100":9,"200":8,"300":7,"400":6,"500":5,"1000":4.8}},
-    "HEROINA": {"unit": "g", "items": {"1":200,"5":850,"10":1600,"25":3500,"50":5900,"100":10000}},
-    "PIKO / METAMFETAMINA": {"unit": "g", "items": {"1":180,"5":160,"10":150,"25":130,"50":110,"100":90}},
-    "2CB 25 mg": {"unit": "tab", "items": {"10":220,"50":680,"100":1100,"500":3000,"1000":5300}},
-    "Żywica THC 90 %": {"unit": "g", "items": {"1":220,"2":350,"5":700,"10":1000,"50":3500,"100":6000}},
+    "Kokaina": {"unit": "g", "pic": "koko.jpg", "items": {"1":300,"5":300,"10":240,"25":200,"50":160,"100":140,"1000":125}},
+    "Marihuana InDoor z USA": {"unit": "g", "pic": "zip.jpg", "items": {"5":32,"10":32,"25":30,"50":28,"100":26,"250":23,"500":22,"1000":21}},
+    "MDMA tabletki 270 mg": {"unit": "szt", "pic": "mdma.jpg", "items": {"10":20,"25":15,"50":12,"100":11,"250":9,"500":8,"1000":4,"5000":3}},
+    "MDMA kryształ": {"unit": "g", "pic": "mdma2.jpg", "items": {"1":60,"5":50,"10":45,"25":43,"50":38,"100":30,"250":25,"500":22}},
+    "Sucha amfetamina": {"unit": "g", "pic": "amfa.jpg", "items": {"5":30,"10":25,"25":20,"50":16,"100":12,"250":10,"500":9}},
+    "4MMC Kenzo 280 mg": {"unit": "szt", "pic": "kenzo.jpg", "items": {"50":550,"100":1000,"500":3000}},
+    "3-CMC": {"unit": "g", "pic": "3cmc.jpg", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":18,"500":15,"1000":12}},
+    "4-CMC": {"unit": "g", "pic": "4cmc.jpg", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":15,"500":13,"1000":11}},
+    "TUCI / Różowa Kokaina": {"unit": "g", "pic": "TUCI.jpg", "items": {"1":140,"2":125,"3":120,"4":110,"5":100,"10":95,"20":90,"30":80,"40":75,"50":70,"100":65,"200":50,"500":45}},
+    "KETAMINA – IGŁY": {"unit": "g", "pic": "ketaigly.jpg", "items": {"1":75,"3":70,"5":60,"10":45,"20":40,"30":35,"40":32,"50":26,"100":16,"200":15}},
+    "KETAMINA – KAMIENIE": {"unit": "g", "pic": "ketakamulec.jpg", "items": {"1":75,"3":70,"5":60,"10":45,"20":40,"30":35,"40":32,"50":26,"100":16,"200":15}},
+    "LSD Mario 250 µg": {"unit": "szt", "pic": "lsd.jpg", "items": {"10":15,"50":10,"100":9,"200":8,"300":7,"400":6,"500":5,"1000":4.8}},
+    "HEROINA": {"unit": "g", "pic": "h.jpg", "items": {"1":200,"5":850,"10":1600,"25":3500,"50":5900,"100":10000}},
+    "PIKO / METAMFETAMINA": {"unit": "g", "pic": "piko.jpg", "items": {"1":180,"5":160,"10":150,"25":130,"50":110,"100":90}},
+    "2CB 25 mg": {"unit": "tab", "pic": "2cb.jpg", "items": {"10":220,"50":680,"100":1100,"500":3000,"1000":5300}},
+    "Żywica THC 90 %": {"unit": "g", "pic": "zip2.jpg", "items": {"1":220,"2":350,"5":700,"10":1000,"50":3500,"100":6000}},
 }
 
 def build_shop_menu():
@@ -313,14 +314,15 @@ def shop(call):
 def shop_product(call):
     prod = call.data.split('_',1)[1]
     unit = PRODUCTS[prod]["unit"]
+    pic  = PRODUCTS[prod]["pic"]
     kb = types.InlineKeyboardMarkup(row_width=2)
     for g, price in PRODUCTS[prod]["items"].items():
         kb.add(types.InlineKeyboardButton(f"{g} {unit} – {price} zł", callback_data=f'add_{prod}_{g}_{price}'))
     kb.add(types.InlineKeyboardButton("⬅️ Sklep", callback_data='shop'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=f"<b>{prod}</b> – wybierz ilość:", parse_mode='HTML', reply_markup=kb)
+    bot.send_photo(call.message.chat.id, open(pic,'rb'),
+                   caption=f"<b>{prod}</b> – wybierz ilość:", parse_mode='HTML', reply_markup=kb)
 
-# -------------------- JEDYNA ZMIANA: MNOŻYMY CENY „NA SZTUKI” --------------------
+# -------------------- MNOŻENIE CEN SZTUK --------------------
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
 def add_to_cart(call):
     _, prod, grams, price = call.data.split('_')
@@ -328,7 +330,6 @@ def add_to_cart(call):
     if uid not in cart: cart[uid] = []
     qty = int(grams)
     unit_price = float(price)
-    # jeśli sztuka/tab – mnożymy, jeśli g – zostawiamy cenę z cennika
     if PRODUCTS[prod]["unit"] in ("szt","tab"):
         total_price = qty * unit_price
     else:
@@ -336,7 +337,7 @@ def add_to_cart(call):
     cart[uid].append({"prod": prod, "grams": grams, "price": total_price})
     bot.answer_callback_query(call.id, "✅ Dodano do koszyka", show_alert=False)
 
-# -------------------- KOSZYK --------------------
+# -------------------- KOSZYK + OPCJE DOSTAWY --------------------
 def cart_summary(uid):
     if uid not in cart or not cart[uid]: return "🛒 Koszyk pusty", 0
     lines = []; total = 0
@@ -366,7 +367,7 @@ def clear_cart(call):
     bot.answer_callback_query(call.id, "🗑️ Koszyk wyczyszczony")
     show_cart(call)
 
-# -------------------- CHECKOUT --------------------
+# -------------------- CHECKOUT Z WYBOREM DOSTAWY --------------------
 @bot.callback_query_handler(func=lambda call: call.data == 'checkout')
 def checkout(call):
     uid = call.from_user.id
@@ -376,11 +377,6 @@ def checkout(call):
     bal = get_saldo(uid)
     if bal < total:
         bot.answer_callback_query(call.id, "❗ Za małe saldo – doładuj!", show_alert=True); return
-    city = "Warszawa"; delivery = "InPost"; crypto = "usdt"
-    amount_crypto = crypto_amount(total, crypto) or 0
-    for item in cart[uid]:
-        save_user_order(uid, city, item['prod'], item['grams'], item['price'], crypto, amount_crypto, delivery)
-    set_saldo(uid, bal - total); cart[uid] = []
     text = (f"✅ <b>Zamówienie zrealizowane!</b>\n\n"
             f"Całkowita wartość: <b>{total} zł</b>\n"
             f"Pozostałe saldo: <code>{get_saldo(uid)} zł</code>")
