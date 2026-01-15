@@ -12,6 +12,7 @@ CONTACT_USER = '@LeProfessionnel_operator'
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache, top_up_cache, cart = {}, {}, {}, {}
 MIN_ORDER = 300
+MIN_DEAD  = 1
 
 # -------------------- pomocnicze --------------------
 def get_saldo(uid): return saldo_db.get(uid, 0)
@@ -457,3 +458,4 @@ def topup_payment(call):
 if __name__ == '__main__':
     print("Le Professionnel – gotowy do działania…")
     bot.infinity_polling(skip_pending=True)
+
