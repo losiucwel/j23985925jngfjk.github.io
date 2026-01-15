@@ -54,16 +54,13 @@ def send_panel(chat_id, text, photo_name=None, kb=None):
                 return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
     return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=kb)
 
-# ----------  NOWY PRZYCISK „GRUPA TG”  ----------
 def build_channel_menu():
     kb = types.InlineKeyboardMarkup(row_width=1)
     kb.add(types.InlineKeyboardButton("📣 Główny kanał", url=MAIN_CHAN),
            types.InlineKeyboardButton("⭐ Opinie", url=OPINIE_CHAN),
            types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
     return kb
-# -----------------------------------------------
 
-# ----------  NOWY PANEL POWITALNY  ----------
 def build_main_menu():
     kb = types.InlineKeyboardMarkup(row_width=1)
     kb.add(
@@ -73,12 +70,12 @@ def build_main_menu():
         types.InlineKeyboardButton("📢 Grupa TG", callback_data='channel_menu')
     )
     return kb
-# -------------------------------------------
 
 def count_user_orders(uid):
     users = load_users()
     return len(users.get(str(uid), {}).get('history', []))
 
+# ===============  START  ===============
 @bot.message_handler(commands=['start'])
 def start(message):
     uid = message.from_user.id; bal = get_saldo(uid)
@@ -87,7 +84,7 @@ def start(message):
             f"📦 <b>Wysyłka InPost/Poczta/DPD/Znaczek – tylko od 50 g (+40 zł)</b>")
     send_panel(message.chat.id, text, FALLBACK_PIC, build_main_menu())
 
-# ===============  MÓJ PROFIL  ===============
+# ===============  PROFILE  ===============
 @bot.callback_query_handler(func=lambda call: call.data == 'my_profile')
 def my_profile(call):
     uid = call.from_user.id
@@ -105,7 +102,7 @@ def my_profile(call):
                              parse_mode='HTML',
                              reply_markup=kb)
 
-# ===============  DOŁADUJ SALDO  ===============
+# ===============  TOP-UP  ===============
 @bot.callback_query_handler(func=lambda call: call.data == 'top_up')
 def top_up_start(call):
     text = "💵 <b>Ile złotych chcesz doładować?</b>\n\nNapisz tylko kwotę (np. 200):"
@@ -121,12 +118,10 @@ def top_up_start(call):
 def top_up_amount(message):
     try:
         amount = int(message.text)
-        if amount <= 0:
-            raise ValueError
+        if amount <= 0: raise ValueError
     except:
         bot.reply_to(message, "❗ Nieprawidłowa kwota. Wpisz liczbę całkowitą > 0.")
-        bot.register_next_step_handler(message, top_up_amount)
-        return
+        bot.register_next_step_handler(message, top_up_amount); return
     uid = message.from_user.id
     top_up_cache[uid] = amount
     text = (f"💵 <b>Doładuj saldo</b>\n\n"
@@ -146,7 +141,7 @@ def top_up_amount(message):
     kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
     bot.send_message(message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
-# ===============  PŁATNOŚĆ ZA DOŁADOWANIE  ===============
+# ===============  TOP-UP PAYMENT  ===============
 @bot.callback_query_handler(func=lambda call: call.data.startswith('topup_'))
 def topup_payment(call):
     parts = call.data.split('_')
