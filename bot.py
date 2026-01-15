@@ -92,6 +92,21 @@ def start(message):
             "• Warszawa\n• Gdańsk\n• Kraków\n• Wrocław\n• Legnica\n• Katowice</blockquote>")
     send_panel(message.chat.id, text, FALLBACK_PIC, build_main_menu())
 
+# -------------------- KOMENDA /saldo (tylko ADMIN) --------------------
+@bot.message_handler(commands=['saldo'])
+def cmd_saldo(message):
+    if message.from_user.id != ADMIN_ID:
+        bot.reply_to(message, "❌ Brak uprawnień.")
+        return
+    try:
+        args = message.text.split()
+        uid = int(args[1])
+        new_val = float(args[2])
+        set_saldo(uid, new_val)
+        bot.reply_to(message, f"✅ Saldo użytkownika {uid} ustawione na {new_val} zł.")
+    except:
+        bot.reply_to(message, "❗ Użyj: <code>/saldo UID kwota</code>", parse_mode='HTML')
+
 # -------------------- PROFILE / KONTAKT / POWROTY --------------------
 @bot.callback_query_handler(func=lambda call: call.data == 'my_profile')
 def my_profile(call):
@@ -497,11 +512,4 @@ def topup_payment(call):
     kb.add(types.InlineKeyboardButton("📋 Kopiuj dane", callback_data=f'copy_{method}'),
            types.InlineKeyboardButton("✅ Sprawdzam płatność",
                                       callback_data=f'topup_check_{pay_id}_{uid}_{amount}'))
-    kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=text, parse_mode='HTML', reply_markup=kb)
-
-# -------------------- START --------------------
-if __name__ == '__main__':
-    print("Le Professionnel – gotowy do działania…")
-    bot.infinity_polling(skip_pending=True)
+    kb.row(types.InlineKeyboardButton("
