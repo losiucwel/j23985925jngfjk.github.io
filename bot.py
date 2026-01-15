@@ -4,7 +4,7 @@ import uuid, os, json, time, requests
 
 TOKEN   = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
 ADMIN_ID = 6029446099
-GROUP_LINK = 'https://t.me/+8VLpDp5-Cqc4OTI0'   # <-- zmień na swój
+GROUP_LINK = 'https://t.me/+TwojLink'   # <-- zmień na swój
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache = {}, {}
@@ -50,7 +50,9 @@ def send_panel(chat_id, text, photo_name=None, kb=None):
 def start(message):
     uid = message.from_user.id; bal = get_saldo(uid)
     text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n"
-            f"💰 Saldo: <code>{bal} zł</code>\n\n📍 <b>Wybierz miasto:</b>")
+            f"💰 Saldo: <code>{bal} zł</code>\n"
+            f"📦 <b>Wysyłka InPost/Poczta/DPD/Znaczek – tylko od 50 g (+40 zł)</b>\n\n"
+            f"📍 <b>Wybierz miasto:</b>")
     kb = types.InlineKeyboardMarkup(row_width=2)
     cities = ["Wrocław", "Legnica", "Warszawa", "Katowice", "Gdańsk", "Kraków"]
     kb.add(*[types.InlineKeyboardButton(c, callback_data=f'city_{c}') for c in cities])
@@ -110,7 +112,9 @@ def handle_inline(call):
     if call.data == 'back_to_cities':
         bal = get_saldo(uid)
         text = (f"👋 <b>Le Professionnel</b> – witaj {call.from_user.first_name}!\n"
-                f"💰 Saldo: <code>{bal} zł</code>\n\n📍 <b>Wybierz miasto:</b>")
+                f"💰 Saldo: <code>{bal} zł</code>\n"
+                f"📦 <b>Wysyłka InPost/Poczta/DPD/Znaczek – tylko od 50 g (+40 zł)</b>\n\n"
+                f"📍 <b>Wybierz miasto:</b>")
         kb = types.InlineKeyboardMarkup(row_width=2)
         cities = ["Wrocław", "Legnica", "Warszawa", "Katowice", "Gdańsk", "Kraków"]
         kb.add(*[types.InlineKeyboardButton(c, callback_data=f'city_{c}') for c in cities])
@@ -333,6 +337,5 @@ def handle_inline(call):
         bot.answer_callback_query(call.id, "⏳ Sprawdzam… funkcja wkrótce!", show_alert=True)
 
 if __name__ == '__main__':
-    print("Le Professionnel (z przyciskiem Grupa TG + poprawione mdma.jpg) działa…")
+    print("Le Professionnel (info o wysyłce od 50 g na starcie) działa…")
     bot.infinity_polling(skip_pending=True)
-
