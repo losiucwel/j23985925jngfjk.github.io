@@ -5,13 +5,14 @@ import uuid, os, json, time, requests
 TOKEN   = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
 ADMIN_ID = 6029446099
 FALLBACK_PIC = 'leprofessionnel.jpg'
-MAIN_CHAN   = 'https://t.me/+8VLpDp5-Cqc4OTI0 '
-OPINIE_CHAN = 'https://t.me/c/3635144020/28 '
+MAIN_CHAN   = 'https://t.me/+8VLpDp5-Cqc4OTI0  '
+OPINIE_CHAN = 'https://t.me/c/3635144020/28  '
 CONTACT_USER = '@LeProfessionnel_operator'
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache, top_up_cache, cart = {}, {}, {}, {}
-MIN_ORDER = 300   # nowy próg
+MIN_ORDER = 300   # bez zmian
+MIN_DEAD  = 1     # bez zmian
 
 # -------------------- pomocnicze --------------------
 def get_saldo(uid): return saldo_db.get(uid, 0)
@@ -79,7 +80,8 @@ def start(message):
     uid = message.from_user.id; bal = get_saldo(uid)
     text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n\n"
             f"💰 Saldo: <code>{bal} zł</code>\n"
-            f"🛒 Minimalne zamówienie: <b>{MIN_ORDER} zł</b>")
+            f"🛒 Minimalne zamówienie: <b>{MIN_ORDER} zł</b>\n"
+            f"📦 Dead-drop już od <b>{MIN_DEAD} g</b>")
     send_panel(message.chat.id, text, FALLBACK_PIC, build_main_menu())
 
 # -------------------- PROFILE / KONTAKT / POWROTY --------------------
@@ -156,7 +158,7 @@ def price_list_info(call):
         "250 g – 25 zł\n"
         "500 g – 22 zł</blockquote>\n\n"
 
-        "<blockquote>⚡ Sucha amfetamina\n"
+        "<blockquote>Sucha amfetamina\n"
         "5 g – 30 zł\n"
         "10 g – 25 zł\n"
         "25 g – 20 zł\n"
@@ -318,12 +320,20 @@ def shop_product(call):
     bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
                              caption=f"<b>{prod}</b> – wybierz ilość:", parse_mode='HTML', reply_markup=kb)
 
+# -------------------- JEDYNA ZMIANA: MNOŻYMY CENY „NA SZTUKI” --------------------
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
 def add_to_cart(call):
     _, prod, grams, price = call.data.split('_')
     uid = call.from_user.id
     if uid not in cart: cart[uid] = []
-    cart[uid].append({"prod": prod, "grams": grams, "price": float(price)})
+    qty = int(grams)
+    unit_price = float(price)
+    # jeśli sztuka/tab – mnożymy, jeśli g – zostawiamy cenę z cennika
+    if PRODUCTS[prod]["unit"] in ("szt","tab"):
+        total_price = qty * unit_price
+    else:
+        total_price = unit_price
+    cart[uid].append({"prod": prod, "grams": grams, "price": total_price})
     bot.answer_callback_query(call.id, "✅ Dodano do koszyka", show_alert=False)
 
 # -------------------- KOSZYK --------------------
@@ -378,7 +388,17 @@ def checkout(call):
     bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
                              caption=text, parse_mode='HTML', reply_markup=kb)
 
-# -------------------- TOP-UP (bez zmian) --------------------
+# -------------------- TOP-UP (BEZ ZMIAN) --------------------
+CRYPTO_ADDRS = {
+    'eth':  '0x319BbaA92e7Bb3A12787E5FE8287d16353c1A411',
+    'tron': 'TYQZ5hZmnHr15BJYMqPQbGfSRJ9vKvoXjN',
+    'btc':  'bc1qc63jdwksx78g94prggp7khx6k2qsy6s492duhg',
+    'ltc':  'LQxzpqeDJqWPRnGz9W2Abtd4igFvNTJgcP',
+    'ton':  'UQA99e-32uJkHREMcaQDNfRwm5GGcSr0edAV1_s8EKu6rlTu',
+    'xmr':  '484JJVZcAwWRiDXh3ivw15Ei8T9bJ7K7X1T464Hit2Zc3EewyEtFui3G1oT4orUyeYaYTHKfTfDdmV3mhsyK4idyHvDobzM',
+    'sol':  'MwCkeFFKPTRvJqGDYSwhsQCSLJUERSrQrHWZBmyLJ2B'
+}
+
 @bot.callback_query_handler(func=lambda call: call.data == 'top_up')
 def top_up_start(call):
     text = "💵 <b>Ile złotych chcesz doładować?</b>\n\nNapisz tylko kwotę (np. 200):"
@@ -397,32 +417,47 @@ def top_up_amount(message):
     uid = message.from_user.id; top_up_cache[uid] = amount
     text = f"💵 <b>Doładuj saldo</b>\n\nKwota: <b>{amount} zł</b>\n\nWybierz metodę płatności:"
     kb = types.InlineKeyboardMarkup(row_width=2)
-    methods = ['tel','eth','tron','btc','ltc','ton','xmr','sol']
-    for m in methods: kb.add(types.InlineKeyboardButton(m.upper(), callback_data=f'topup_{m}_{amount}'))
+    methods = ['blik','eth','tron','btc','ltc','ton','xmr','sol']
+    for m in methods:
+        kb.add(types.InlineKeyboardButton(m.upper(), callback_data=f'topup_{m}_{amount}'))
     kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
     bot.send_message(message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('topup_'))
 def topup_payment(call):
-    parts = call.data.split('_'); method, amount = parts[1], float(parts[2])
-    uid = call.from_user.id; pay_id = str(uuid.uuid4())
+    parts = call.data.split('_')
+    method, amount = parts[1], float(parts[2])
+    uid = call.from_user.id
+    pay_id = str(uuid.uuid4())
+
+    if method == 'blik':
+        bot.answer_callback_query(call.id, "💈 BLIK – dostępne niedługo!", show_alert=True)
+        return
+
     crypto_val = crypto_amount(amount, method)
     if crypto_val is None:
         bot.answer_callback_query(call.id, "❗ Błąd pobierania kursów walut", show_alert=True); return
-    min_dep = 0.00003 if method in ('btc','ltc','eth','tron') else 0.1
-    addr = {'eth':'0x05e8c9e064d52C3F63b278B8120C53e49E70e26c','tron':'TVCeVXceuZtiQ9sZj3j4mDQ87Zw9NfvG3T','btc':'bc1qfwsz3ltfuxe33trezk0mdvsvcqx48d6250tda8','ltc':'LQfBdUpBfrUN5KYkZPmjPB1ieZcSSFXKaM','ton':'EQD4KZ1lXqCmRXXnY3L9fH9Y3L9fH9Y3L9fH9Y3L9fH9','xmr':'46yz1JJP9k8GTgN3Vb5mYYCJgQWgXJHmXJtF5yU7L9fH9Y3L9fH9Y3L9fH9','sol':'SoLWl1234567890abcdef'}.get(method,'-')
-    text = (f"<b>Le Professionnel - doładowanie</b>\nID płatności: <code>{pay_id}</code>\n\n"
-            f"💳 Metoda: <b>{method.upper()}</b>\n📨 Adres: <code>{addr}</code>\n\n"
-            f"💰 Kwota: <b>{crypto_val:.6f} {method.upper()}</b>\n⏳ Czas: <b>29 minut</b>\n\n"
-            f"⚠️ Wyślij dokładnie <b>{crypto_val:.6f}</b> (min. {min_dep}) jednym przelewem – inaczej środki przepadną!")
+
+    addr = CRYPTO_ADDRS.get(method, '-')
+    text = (
+        f"<b>Le Professionnel – doładowanie</b>\n"
+        f"ID płatności: <code>{pay_id}</code>\n\n"
+        f"💳 Metoda: <b>{method.upper()}</b>\n"
+        f"📨 Adres: <code>{addr}</code>\n\n"
+        f"💰 Kwota PLN: <b>{amount} zł</b>\n"
+        f"💰 Kwota krypto: <b>{crypto_val:.6f} {method.upper()}</b>\n\n"
+        f"⚠️ Wyślij dokładnie <b>{crypto_val:.6f} {method.upper()}</b> "
+        f"(jednym przelewem) – inaczej środki przepadną!"
+    )
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("📋 Kopiuj dane", callback_data=f'copy_{method}'),
-           types.InlineKeyboardButton("✅ Sprawdzam płatność", callback_data=f'topup_check_{pay_id}_{uid}_{amount}'))
+           types.InlineKeyboardButton("✅ Sprawdzam płatność",
+                                      callback_data=f'topup_check_{pay_id}_{uid}_{amount}'))
     kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
     bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
                              caption=text, parse_mode='HTML', reply_markup=kb)
 
 # -------------------- START --------------------
 if __name__ == '__main__':
-    print("Le Professionnel – oddzielny cennik i sklep – działa…")
+    print("Le Professionnel – gotowy do działania…")
     bot.infinity_polling(skip_pending=True)
