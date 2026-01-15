@@ -79,7 +79,7 @@ def count_user_orders(uid):
 @bot.message_handler(commands=['start'])
 def start(message):
     uid = message.from_user.id; bal = get_saldo(uid)
-    text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!</b>\n\n"
+    text = (f"👋 <b>Le Professionnel</b> – witaj {message.from_user.first_name}!\n\n"
             f"💰 Saldo: <code>{bal} zł</code>\n"
             f"📦 <b>Wysyłka InPost/Poczta/DPD/Znaczek – tylko od 50 g (+40 zł)</b>")
     send_panel(message.chat.id, text, FALLBACK_PIC, build_main_menu())
@@ -254,5 +254,5 @@ def channel_menu(call):
 
 # ===============  START  ===============
 if __name__ == '__main__':
-    print("Le Professionnel (nowy panel powitalny + cennik estetyka) działa…")
+    print("Le Professionnel (HTML poprawiony) działa…")
     bot.infinity_polling(skip_pending=True)
