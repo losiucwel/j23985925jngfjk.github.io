@@ -4,7 +4,8 @@ import uuid, os, json, time, requests
 
 TOKEN   = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
 ADMIN_ID = 6029446099
-GROUP_LINK = 'https://t.me/+TwojLink'   # <-- zmień na swój
+GROUP_LINK = 'https://t.me/+8VLpDp5-Cqc4OTI0'   # <-- zmień na swój
+FALLBACK_PIC = 'leprofessionnel.jpg'    # <-- domyślne zdjęcie
 
 bot = telebot.TeleBot(TOKEN)
 saldo_db, user_cache = {}, {}
@@ -41,10 +42,20 @@ def save_user_order(uid, city, prod, grams, price_pln, crypto, amount_crypto, de
     users[uid_str]['history'].append(order); users[uid_str]['last_order'] = order
     save_users(users)
 
+# --------------  NOWA FUNKCJA  --------------
 def send_panel(chat_id, text, photo_name=None, kb=None):
+    # jeśli podano zdjęcie i istnieje – wyślij je
     if photo_name and os.path.exists(photo_name):
-        with open(photo_name, 'rb') as img: return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
+        with open(photo_name, 'rb') as img:
+            return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
+    # jeśli podano zdjęcie, ale nie istnieje – wyślij fallback
+    if photo_name:
+        if os.path.exists(FALLBACK_PIC):
+            with open(FALLBACK_PIC, 'rb') as img:
+                return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
+    # w pozostałych przypadkach – zwykła wiadomość
     return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=kb)
+# --------------------------------------------
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -337,5 +348,5 @@ def handle_inline(call):
         bot.answer_callback_query(call.id, "⏳ Sprawdzam… funkcja wkrótce!", show_alert=True)
 
 if __name__ == '__main__':
-    print("Le Professionnel (info o wysyłce od 50 g na starcie) działa…")
+    print("Le Professionnel (fallback: leprofessionnel.jpg) działa…")
     bot.infinity_polling(skip_pending=True)
