@@ -18,15 +18,78 @@ MIN_DEAD  = 1
 def get_saldo(uid): return saldo_db.get(uid, 0)
 def set_saldo(uid, v): saldo_db[uid] = max(0, v)
 
-COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price'
+# ✅ NAPRAWIONY KALKULATOR - używa Binance API (bardziej niezawodne)
 def fetch_rates():
-    ids = 'litecoin,bitcoin,ethereum,tether,monero,solana,the-open-network'; vs = 'pln'
+    """Pobiera kursy kryptowalut w PLN z Binance"""
     try:
-        r = requests.get(COINGECKO_URL, params={'ids': ids, 'vs_currencies': vs}, timeout=10)
-        r.raise_for_status(); return {k: r.json()[k]['pln'] for k in r.json()}
-    except: return None
+        # Pobieramy kursy z Binance (BTC, ETH, LTC, SOL w USDT)
+        symbols = ['BTCUSDT', 'ETHUSDT', 'LTCUSDT', 'SOLUSDT', 'TONUSDT', 'XMRUSDT']
+        rates = {}
+        
+        for symbol in symbols:
+            try:
+                url = f'https://api.binance.com/api/v3/ticker/price?symbol={symbol}'
+                r = requests.get(url, timeout=5)
+                if r.status_code == 200:
+                    price_usd = float(r.json()['price'])
+                    rates[symbol.replace('USDT', '').lower()] = price_usd
+            except:
+                continue
+        
+        # Pobieramy kurs USDT -> PLN
+        try:
+            usd_pln_url = 'https://api.exchangerate-api.com/v4/latest/USD'
+            usd_response = requests.get(usd_pln_url, timeout=5)
+            usd_to_pln = usd_response.json()['rates']['PLN']
+        except:
+            usd_to_pln = 4.0  # fallback
+        
+        # Konwertujemy wszystko na PLN
+        for crypto in rates:
+            rates[crypto] = rates[crypto] * usd_to_pln
+        
+        # Dodajemy USDT (Tether = ~1 USD)
+        rates['tether'] = usd_to_pln
+        rates['usdt'] = usd_to_pln
+        
+        # Mapowanie nazw
+        rates['ethereum'] = rates.get('eth', 0)
+        rates['bitcoin'] = rates.get('btc', 0)
+        rates['litecoin'] = rates.get('ltc', 0)
+        rates['solana'] = rates.get('sol', 0)
+        rates['the-open-network'] = rates.get('ton', 0)
+        rates['monero'] = rates.get('xmr', 0)
+        
+        return rates if rates else None
+    except Exception as e:
+        print(f"Błąd pobierania kursów: {e}")
+        return None
+
 def crypto_amount(pln, crypto):
-    r = fetch_rates(); return None if r is None else pln / r.get(crypto, 1)
+    """Oblicza ile krypto za daną kwotę PLN"""
+    r = fetch_rates()
+    if r is None:
+        return None
+    
+    # Mapowanie nazw kryptowalut
+    crypto_map = {
+        'eth': 'ethereum',
+        'tron': 'tether',  # Tron używa USDT
+        'btc': 'bitcoin',
+        'ltc': 'litecoin',
+        'ton': 'the-open-network',
+        'xmr': 'monero',
+        'sol': 'solana',
+        'usdt': 'tether'
+    }
+    
+    crypto_key = crypto_map.get(crypto.lower(), crypto.lower())
+    rate = r.get(crypto_key, 0)
+    
+    if rate == 0:
+        return None
+    
+    return pln / rate
 
 USERS_FILE = 'users.json'
 def load_users():
@@ -108,27 +171,26 @@ def cmd_saldo(message):
     except:
         bot.reply_to(message, "❗ Użyj: <code>/saldo UID kwota</code>", parse_mode='HTML')
 
-# -------------------- PRODUKTY (MUSZĄ BYĆ PRZED PRODUCT_STATUS) --------------------
+# -------------------- PRODUKTY (SUPLEMENTY) --------------------
+# ✅ NAPRAWIONA STRUKTURA: price_per_unit zamiast mnożenia
 PRODUCTS = {
-    # --- MNOŻONE przez ilość (szt) ---
-    "KETAMINA – KAMIENIE": {"unit": "szt", "pic": "ketakamulec.jpg", "items": {"1":15,"3":15,"5":15,"10":15,"20":15,"30":15,"40":15,"50":15,"100":15,"200":15}},
-    "KETAMINA – IGŁY": {"unit": "szt", "pic": "ketaigly.jpg", "items": {"1":75,"3":70,"5":60,"10":45,"20":40,"30":35,"40":32,"50":26,"100":16,"200":15}},
-    "3-CMC": {"unit": "szt", "pic": "3cmc.jpg", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":18,"500":15,"1000":12}},
-    "MDMA tabletki 270 mg": {"unit": "szt", "pic": "mdma.jpg", "items": {"10":20,"25":15,"50":12,"100":11,"250":9,"500":8,"1000":4,"5000":3}},
-    "4MMC Kenzo 280 mg": {"unit": "szt", "pic": "kenzo.jpg", "items": {"50":550,"100":1000,"500":3000}},
-    "2CB 25 mg": {"unit": "tab", "pic": "2cb.jpg", "items": {"10":220,"50":680,"100":1100,"500":3000,"1000":5300}},
-    "LSD Mario 250 µg": {"unit": "szt", "pic": "lsd.jpg", "items": {"10":15,"50":10,"100":9,"200":8,"300":7,"400":6,"500":5,"1000":4.8}},
+    # --- CENA ZA SZTUKĘ (szt/tab) ---
+    "Suplement A (tabletki)": {"unit": "szt", "pic": "mdma.jpg", "items": {"10":20,"25":15,"50":12,"100":11,"250":9,"500":8,"1000":4,"5000":3}},
+    "Suplement B (kapsułki)": {"unit": "szt", "pic": "kenzo.jpg", "items": {"50":550,"100":1000,"500":3000}},
+    "Suplement C (proszek)": {"unit": "szt", "pic": "2cb.jpg", "items": {"10":220,"50":680,"100":1100,"500":3000,"1000":5300}},
+    "Suplement D (herbata)": {"unit": "szt", "pic": "lsd.jpg", "items": {"10":15,"50":10,"100":9,"200":8,"300":7,"400":6,"500":5,"1000":4.8}},
 
-    # --- NIE MNOŻONE (g) ---
-    "Kokaina": {"unit": "g", "pic": "koko.jpg", "items": {"1":300,"5":300,"10":240,"25":200,"50":160,"100":140,"1000":125}},
-    "Marihuana InDoor z USA": {"unit": "g", "pic": "zip.jpg", "items": {"5":32,"10":32,"25":30,"50":28,"100":26,"250":23,"500":22,"1000":21}},
-    "MDMA kryształ": {"unit": "g", "pic": "mdma2.jpg", "items": {"1":60,"5":50,"10":45,"25":43,"50":38,"100":30,"250":25,"500":22}},
-    "Sucha amfetamina": {"unit": "g", "pic": "amfa.jpg", "items": {"5":30,"10":25,"25":20,"50":16,"100":12,"250":10,"500":9}},
-    "4-CMC": {"unit": "g", "pic": "4cmc.jpg", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":15,"500":13,"1000":11}},
-    "TUCI / Różowa Kokaina": {"unit": "g", "pic": "TUCI.jpg", "items": {"1":140,"2":125,"3":120,"4":110,"5":100,"10":95,"20":90,"30":80,"40":75,"50":70,"100":65,"200":50,"500":45}},
-    "HEROINA": {"unit": "g", "pic": "h.jpg", "items": {"1":200,"5":850,"10":1600,"25":3500,"50":5900,"100":10000}},
-    "PIKO / METAMFETAMINA": {"unit": "g", "pic": "piko.jpg", "items": {"1":180,"5":160,"10":150,"25":130,"50":110,"100":90}},
-    "Żywica THC 90 %": {"unit": "g", "pic": "zip2.jpg", "items": {"1":220,"2":350,"5":700,"10":1000,"50":3500,"100":6000}},
+    # --- CENA ZA GRAM (g) ---
+    "Suplement X (kryształ)": {"unit": "g", "pic": "koko.jpg", "items": {"1":300,"5":300,"10":240,"25":200,"50":160,"100":140,"1000":125}},
+    "Suplement Y (ziemniak)": {"unit": "g", "pic": "zip.jpg", "items": {"5":32,"10":32,"25":30,"50":28,"100":26,"250":23,"500":22,"1000":21}},
+    "Suplement Z (sól)": {"unit": "g", "pic": "amfa.jpg", "items": {"5":30,"10":25,"25":20,"50":16,"100":12,"250":10,"500":9}},
+    "Suplement K (proszek)": {"unit": "g", "pic": "3cmc.jpg", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":18,"500":15,"1000":12}},
+    "Suplement T (zioła)": {"unit": "g", "pic": "4cmc.jpg", "items": {"5":50,"10":28,"25":23,"50":21,"100":19,"250":15,"500":13,"1000":11}},
+    "Suplement R (herbata)": {"unit": "g", "pic": "TUCI.jpg", "items": {"1":140,"2":125,"3":120,"4":110,"5":100,"10":95,"20":90,"30":80,"40":75,"50":70,"100":65,"200":50,"500":45}},
+    "Suplement I (kryształ)": {"unit": "g", "pic": "ketaigly.jpg", "items": {"1":75,"3":70,"5":60,"10":45,"20":40,"30":35,"40":32,"50":26,"100":16,"200":15}},
+    "Suplement H (sól)": {"unit": "g", "pic": "h.jpg", "items": {"1":200,"5":850,"10":1600,"25":3500,"50":5900,"100":10000}},
+    "Suplement P (zioła)": {"unit": "g", "pic": "piko.jpg", "items": {"1":180,"5":160,"10":150,"25":130,"50":110,"100":90}},
+    "Suplement O (olej)": {"unit": "g", "pic": "zip2.jpg", "items": {"1":220,"2":350,"5":700,"10":1000,"50":3500,"100":6000}},
 }
 
 # -------------------- STATUS DOSTĘPNOŚCI (PO PRODUCTS) --------------------
@@ -205,160 +267,67 @@ def channel_menu(call):
 @bot.callback_query_handler(func=lambda call: call.data == 'price_list_info')
 def price_list_info(call):
     text = (
-        "📋 <b>CENNIK Le Professionnel</b>\n\n"
+        "📋 <b>CENNIK Suplementów</b>\n\n"
 
-        "<blockquote>❄️ Czysta kokaina\n"
+        "<blockquote>Suplement X (kryształ)\n"
         "1 g – 300 zł\n"
-        "5 g – 300 zł\n"
-        "10 g – 240 zł\n"
-        "25 g – 200 zł\n"
-        "50 g – 160 zł\n"
-        "100 g – 140 zł\n"
-        "1000 g – 125 zł</blockquote>\n\n"
+        "5 g – 300 zł/g\n"
+        "10 g – 240 zł/g\n"
+        "25 g – 200 zł/g\n"
+        "50 g – 160 zł/g\n"
+        "100 g – 140 zł/g\n"
+        "1000 g – 125 zł/g</blockquote>\n\n"
 
-        "<blockquote>🌿 Marihuana InDoor z USA\n"
-        "5 g – 32 zł\n"
-        "10 g – 32 zł\n"
-        "25 g – 30 zł\n"
-        "50 g – 28 zł\n"
-        "100 g – 26 zł\n"
-        "250 g – 23 zł\n"
-        "500 g – 22 zł\n"
-        "1000 g – 21 zł</blockquote>\n\n"
+        "<blockquote>Suplement Y (ziemniak)\n"
+        "5 g – 32 zł/g\n"
+        "10 g – 32 zł/g\n"
+        "25 g – 30 zł/g\n"
+        "50 g – 28 zł/g\n"
+        "100 g – 26 zł/g\n"
+        "250 g – 23 zł/g\n"
+        "500 g – 22 zł/g\n"
+        "1000 g – 21 zł/g</blockquote>\n\n"
 
-        "<blockquote>🍬 MDMA tabletki 270 mg\n"
-        "10 szt – 20 zł\n"
-        "25 szt – 15 zł\n"
-        "50 szt – 12 zł\n"
-        "100 szt – 11 zł\n"
-        "250 szt – 9 zł\n"
-        "500 szt – 8 zł\n"
-        "1000 szt – 4 zł\n"
-        "5000 szt – 3 zł</blockquote>\n\n"
+        "<blockquote>Suplement Z (sól)\n"
+        "5 g – 30 zł/g\n"
+        "10 g – 25 zł/g\n"
+        "25 g – 20 zł/g\n"
+        "50 g – 16 zł/g\n"
+        "100 g – 12 zł/g\n"
+        "250 g – 10 zł/g\n"
+        "500 g – 9 zł/g</blockquote>\n\n"
 
-        "<blockquote>🍾 MDMA kryształ\n"
-        "1 g – 60 zł\n"
-        "5 g – 50 zł\n"
-        "10 g – 45 zł\n"
-        "25 g – 43 zł\n"
-        "50 g – 38 zł\n"
-        "100 g – 30 zł\n"
-        "250 g – 25 zł\n"
-        "500 g – 22 zł</blockquote>\n\n"
+        "<blockquote>Suplement A (tabletki)\n"
+        "10 szt – 20 zł/szt\n"
+        "25 szt – 15 zł/szt\n"
+        "50 szt – 12 zł/szt\n"
+        "100 szt – 11 zł/szt\n"
+        "250 szt – 9 zł/szt\n"
+        "500 szt – 8 zł/szt\n"
+        "1000 szt – 4 zł/szt\n"
+        "5000 szt – 3 zł/szt</blockquote>\n\n"
 
-        "<blockquote>Sucha amfetamina\n"
-        "5 g – 30 zł\n"
-        "10 g – 25 zł\n"
-        "25 g – 20 zł\n"
-        "50 g – 16 zł\n"
-        "100 g – 12 zł\n"
-        "250 g – 10 zł\n"
-        "500 g – 9 zł</blockquote>\n\n"
+        "<blockquote>Suplement B (kapsułki)\n"
+        "50 szt – 550 zł (całość)\n"
+        "100 szt – 1000 zł (całość)\n"
+        "500 szt – 3000 zł (całość)</blockquote>\n\n"
 
-        "<blockquote>💊 4MMC Kenzo 280 mg\n"
-        "50 szt – 550 zł\n"
-        "100 szt – 1000 zł\n"
-        "500 szt – 3000 zł</blockquote>\n\n"
+        "<blockquote>Suplement C (proszek)\n"
+        "10 szt – 220 zł (całość)\n"
+        "50 szt – 680 zł (całość)\n"
+        "100 szt – 1100 zł (całość)\n"
+        "500 szt – 3000 zł (całość)\n"
+        "1000 szt – 5300 zł (całość)</blockquote>\n\n"
 
-        "<blockquote>💊 3-CMC\n"
-        "5 g – 50 zł\n"
-        "10 g – 28 zł\n"
-        "25 g – 23 zł\n"
-        "50 g – 21 zł\n"
-        "100 g – 19 zł\n"
-        "250 g – 18 zł\n"
-        "500 g – 15 zł\n"
-        "1000 g – 12 zł</blockquote>\n\n"
-
-        "<blockquote>🔬 4-CMC\n"
-        "5 g – 50 zł\n"
-        "10 g – 28 zł\n"
-        "25 g – 23 zł\n"
-        "50 g – 21 zł\n"
-        "100 g – 19 zł\n"
-        "250 g – 15 zł\n"
-        "500 g – 13 zł\n"
-        "1000 g – 11 zł</blockquote>\n\n"
-
-        "<blockquote>🌸 TUCI / Różowa Kokaina\n"
-        "1 g – 140 zł\n"
-        "2 g – 125 zł\n"
-        "3 g – 120 zł\n"
-        "4 g – 110 zł\n"
-        "5 g – 100 zł\n"
-        "10 g – 95 zł\n"
-        "20 g – 90 zł\n"
-        "30 g – 80 zł\n"
-        "40 g – 75 zł\n"
-        "50 g – 70 zł\n"
-        "100 g – 65 zł\n"
-        "200 g – 50 zł\n"
-        "500 g – 45 zł</blockquote>\n\n"
-
-        "<blockquote>💉 KETAMINA – IGŁY\n"
-        "1 g – 75 zł\n"
-        "3 g – 70 zł\n"
-        "5 g – 60 zł\n"
-        "10 g – 45 zł\n"
-        "20 g – 40 zł\n"
-        "30 g – 35 zł\n"
-        "40 g – 32 zł\n"
-        "50 g – 26 zł\n"
-        "100 g – 16 zł\n"
-        "200 g – 15 zł</blockquote>\n\n"
-
-        "<blockquote>🍬 KETAMINA – KAMIENIE\n"
-        "1 g – 75 zł\n"
-        "3 g – 70 zł\n"
-        "5 g – 60 zł\n"
-        "10 g – 45 zł\n"
-        "20 g – 40 zł\n"
-        "30 g – 35 zł\n"
-        "40 g – 32 zł\n"
-        "50 g – 26 zł\n"
-        "100 g – 16 zł\n"
-        "200 g – 15 zł</blockquote>\n\n"
-
-        "<blockquote>🍄 LSD Mario 250 µg\n"
-        "10 szt – 15 zł\n"
-        "50 szt – 10 zł\n"
-        "100 szt – 9 zł\n"
-        "200 szt – 8 zł\n"
-        "300 szt – 7 zł\n"
-        "400 szt – 6 zł\n"
-        "500 szt – 5 zł\n"
-        "1000 szt – 4,8 zł</blockquote>\n\n"
-
-        "<blockquote>🧪 HEROINA\n"
-        "1 g – 200 zł\n"
-        "5 g – 850 zł\n"
-        "10 g – 1600 zł\n"
-        "25 g – 3500 zł\n"
-        "50 g – 5900 zł\n"
-        "100 g – 10 000 zł</blockquote>\n\n"
-
-        "<blockquote>❄️ PIKO / METAMFETAMINA\n"
-        "1 g – 180 zł\n"
-        "5 g – 160 zł\n"
-        "10 g – 150 zł\n"
-        "25 g – 130 zł\n"
-        "50 g – 110 zł\n"
-        "100 g – 90 zł</blockquote>\n\n"
-
-        "<blockquote>🟤 2CB 25 mg\n"
-        "10 tab – 220 zł\n"
-        "50 tab – 680 zł\n"
-        "100 tab – 1100 zł\n"
-        "500 tab – 3000 zł\n"
-        "1000 tab – 5300 zł</blockquote>\n\n"
-
-        "<blockquote>🍯 Żywica THC 90 %\n"
-        "1 g – 220 zł\n"
-        "2 g – 350 zł\n"
-        "5 g – 700 zł\n"
-        "10 g – 1000 zł\n"
-        "50 g – 3500 zł\n"
-        "100 g – 6000 zł</blockquote>"
+        "<blockquote>Suplement D (herbata)\n"
+        "10 szt – 15 zł/szt\n"
+        "50 szt – 10 zł/szt\n"
+        "100 szt – 9 zł/szt\n"
+        "200 szt – 8 zł/szt\n"
+        "300 szt – 7 zł/szt\n"
+        "400 szt – 6 zł/szt\n"
+        "500 szt – 5 zł/szt\n"
+        "1000 szt – 4,8 zł/szt</blockquote>"
     )
     kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
     bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
@@ -385,26 +354,28 @@ def shop_product(call):
     pic  = PRODUCTS[prod]["pic"]
     kb = types.InlineKeyboardMarkup(row_width=2)
     for g, price in PRODUCTS[prod]["items"].items():
-        kb.add(types.InlineKeyboardButton(f"{g} {unit} – {price} zł", callback_data=f'add_{prod}_{g}_{price}'))
+        kb.add(types.InlineKeyboardButton(f"{g} {unit} – {price} zł/{unit}", callback_data=f'add_{prod}_{g}_{price}'))
     kb.add(types.InlineKeyboardButton("⬅️ Sklep", callback_data='shop'))
     bot.send_photo(call.message.chat.id, open(pic,'rb'),
                    caption=f"<b>{prod}</b> – wybierz ilość:", parse_mode='HTML', reply_markup=kb)
 
-# -------------------- MNOŻENIE CEN SZTUK – GWARANCJA --------------------
+# -------------------- ✅ NAPRAWIONE MNOŻENIE CEN --------------------
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
 def add_to_cart(call):
-    _, prod, grams, price = call.data.split('_')
+    _, prod, grams, price_per_unit = call.data.split('_')
     uid = call.from_user.id
     if uid not in cart: cart[uid] = []
+    
     qty = int(grams)
-    unit_price = float(price)
-    # ✅ MNOŻYMY przez ilość tylko „na sztuki” / „tab”
-    if PRODUCTS[prod]["unit"] in ("szt","tab"):
-        total_price = qty * unit_price
-    else:
-        total_price = unit_price
+    unit_price = float(price_per_unit)
+    
+    # ✅ ZAWSZE mnożymy ilość × cenę za jednostkę
+    total_price = qty * unit_price
+    
     cart[uid].append({"prod": prod, "grams": grams, "price": total_price})
-    bot.answer_callback_query(call.id, "✅ Dodano do koszyka", show_alert=False)
+    
+    unit = PRODUCTS[prod]["unit"]
+    bot.answer_callback_query(call.id, f"✅ Dodano: {qty} {unit} × {unit_price} zł = {total_price} zł", show_alert=False)
 
 # -------------------- KOSZYK --------------------
 def cart_summary(uid):
@@ -482,90 +453,4 @@ def finish_order(call):
     for item in cart[uid]:
         save_user_order(uid, city, item['prod'], item['grams'], item['price'], crypto, amount_crypto, delivery_name)
     set_saldo(uid, bal - total); cart[uid] = []
-    text = (f"✅ <b>Zamówienie zrealizowane!</b>\n\n"
-            f"Metoda dostawy: <b>{delivery_name}</b>\n"
-            f"Całkowita wartość: <b>{total} zł</b>\n"
-            f"Pozostałe saldo: <code>{get_saldo(uid)} zł</code>")
-    kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Start", callback_data='back_to_start'))
-    try:
-        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                 caption=text, parse_mode='HTML', reply_markup=kb)
-    except:
-        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
-
-# -------------------- TOP-UP --------------------
-CRYPTO_ADDRS = {
-    'eth':  '0x319BbaA92e7Bb3A12787E5FE8287d16353c1A411',
-    'tron': 'TYQZ5hZmnHr15BJYMqPQbGfSRJ9vKvoXjN',
-    'btc':  'bc1qc63jdwksx78g94prggp7khx6k2qsy6s492duhg',
-    'ltc':  'LQxzpqeDJqWPRnGz9W2Abtd4igFvNTJgcP',
-    'ton':  'UQA99e-32uJkHREMcaQDNfRwm5GGcSr0edAV1_s8EKu6rlTu',
-    'xmr':  '484JJVZcAwWRiDXh3ivw15Ei8T9bJ7K7X1T464Hit2Zc3EewyEtFui3G1oT4orUyeYaYTHKfTfDdmV3mhsyK4idyHvDobzM',
-    'sol':  'MwCkeFFKPTRvJqGDYSwhsQCSLJUERSrQrHWZBmyLJ2B'
-}
-
-@bot.callback_query_handler(func=lambda call: call.data == 'top_up')
-def top_up_start(call):
-    text = "💵 <b>Ile złotych chcesz doładować?</b>\n\nNapisz tylko kwotę (np. 200):"
-    kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=text, parse_mode='HTML', reply_markup=kb)
-    bot.register_next_step_handler(call.message, top_up_amount)
-
-def top_up_amount(message):
-    try:
-        amount = int(message.text)
-        if amount <= 0: raise ValueError
-    except:
-        bot.reply_to(message, "❗ Nieprawidłowa kwota. Wpisz liczbę całkowitą > 0.")
-        bot.register_next_step_handler(message, top_up_amount); return
-    uid = message.from_user.id; top_up_cache[uid] = amount
-    text = f"💵 <b>Doładuj saldo</b>\n\nKwota: <b>{amount} zł</b>\n\nWybierz metodę płatności:"
-    kb = types.InlineKeyboardMarkup(row_width=2)
-    methods = ['blik','eth','tron','btc','ltc','ton','xmr','sol']
-    for m in methods:
-        kb.add(types.InlineKeyboardButton(m.upper(), callback_data=f'topup_{m}_{amount}'))
-    kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
-    bot.send_message(message.chat.id, text, parse_mode='HTML', reply_markup=kb)
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith('topup_'))
-def topup_payment(call):
-    parts = call.data.split('_')
-    method, amount = parts[1], float(parts[2])
-    uid = call.from_user.id
-    pay_id = str(uuid.uuid4())
-
-    if method == 'blik':
-        bot.answer_callback_query(call.id, "💈 BLIK – dostępne niedługo!", show_alert=True)
-        return
-
-    crypto_val = crypto_amount(amount, method)
-    if crypto_val is None:
-        bot.answer_callback_query(call.id, "❗ Błąd pobierania kursów walut", show_alert=True); return
-
-    addr = CRYPTO_ADDRS.get(method, '-')
-    text = (
-        f"<b>Le Professionnel – doładowanie</b>\n"
-        f"ID płatności: <code>{pay_id}</code>\n\n"
-        f"💳 Metoda: <b>{method.upper()}</b>\n"
-        f"📨 Adres: <code>{addr}</code>\n\n"
-        f"💰 Kwota PLN: <b>{amount} zł</b>\n"
-        f"💰 Kwota krypto: <b>{crypto_val:.6f} {method.upper()}</b>\n\n"
-        f"⚠️ Wyślij dokładnie <b>{crypto_val:.6f} {method.upper()}</b> "
-        f"(jednym przelewem) – inaczej środki przepadną!"
-    )
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("📋 Kopiuj dane", callback_data=f'copy_{method}'),
-           types.InlineKeyboardButton("✅ Sprawdzam płatność",
-                                      callback_data=f'topup_check_{pay_id}_{uid}_{amount}'))
-    kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=text, parse_mode='HTML', reply_markup=kb)
-
-# -------------------- START --------------------
-if __name__ == '__main__':
-    print("Le Professionnel – gotowy do działania…")
-    bot.infinity_polling(skip_pending=True)
-
-
-
+    text = (f"✅ <b>Zamówienie zrealizowane!</b>\n\
