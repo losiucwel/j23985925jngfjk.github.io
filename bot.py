@@ -6,7 +6,7 @@ TOKEN   = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
 ADMIN_ID = 6029446099
 FALLBACK_PIC = 'leprofessionnel.jpg'
 MAIN_CHAN   = 'https://t.me/+8VLpDp5-Cqc4OTI0  '
-OPINIE_CHAN = 'https://t.me/+azuEqt5vmg8wODk0  '
+OPINIE_CHAN = 'https://t.me/c/3635144020/28  '
 CONTACT_USER = '@LeProfessionnel_operator'
 
 bot = telebot.TeleBot(TOKEN)
@@ -387,6 +387,7 @@ def shop_product(call):
     bot.send_photo(call.message.chat.id, open(pic,'rb'),
                    caption=f"<b>{prod}</b> – wybierz ilość:", parse_mode='HTML', reply_markup=kb)
 
+# -------------------- MNOŻENIE CEN SZTUK – GWARANCJA --------------------
 @bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
 def add_to_cart(call):
     _, prod, grams, price = call.data.split('_')
@@ -394,6 +395,7 @@ def add_to_cart(call):
     if uid not in cart: cart[uid] = []
     qty = int(grams)
     unit_price = float(price)
+    # ✅ MNOŻYMY przez ilość tylko „na sztuki” / „tab”
     if PRODUCTS[prod]["unit"] in ("szt","tab"):
         total_price = qty * unit_price
     else:
@@ -434,7 +436,7 @@ def clear_cart(call):
     bot.answer_callback_query(call.id, "🗑️ Koszyk wyczyszczony")
     show_cart(call)
 
-# -------------------- DOSTAWA Z CENAMI --------------------
+# -------------------- DOSTAWA Z CENAMI I DEAD-DROP 0 ZŁ --------------------
 delivery_options = {
     'inpost'  : 'InPost Paczkomat – 40 zł',
     'poczta'  : 'Poczta – 40 zł',
@@ -561,4 +563,3 @@ def topup_payment(call):
 if __name__ == '__main__':
     print("Le Professionnel – gotowy do działania…")
     bot.infinity_polling(skip_pending=True)
-
