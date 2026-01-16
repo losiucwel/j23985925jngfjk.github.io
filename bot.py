@@ -2,11 +2,11 @@ import telebot
 from telebot import types
 import uuid, os, json, time
 
-TOKEN   = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
-ADMIN_ID = 6029446099
+TOKEN        = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
+ADMIN_ID     = 6029446099
 FALLBACK_PIC = 'leprofessionnel.jpg'
-MAIN_CHAN   = 'https://t.me/+8VLpDp5-Cqc4OTI0  '
-OPINIE_CHAN = 'https://t.me/c/3635144020/28  '
+MAIN_CHAN    = 'https://t.me/+8VLpDp5-Cqc4OTI0  '
+OPINIE_CHAN  = 'https://t.me/c/3635144020/28  '
 CONTACT_USER = '@LeProfessionnel_operator'
 
 bot = telebot.TeleBot(TOKEN)
@@ -52,11 +52,9 @@ def save_user_order(uid, city, prod, grams, price_pln, crypto, amount_crypto, de
 def send_panel(chat_id, text, photo_name=None, kb=None):
     try:
         if photo_name and os.path.exists(photo_name):
-            with open(photo_name, 'rb') as img:
-                return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
+            with open(photo_name, 'rb') as img: return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
         if os.path.exists(FALLBACK_PIC):
-            with open(FALLBACK_PIC, 'rb') as img:
-                return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
+            with open(FALLBACK_PIC, 'rb') as img: return bot.send_photo(chat_id, img, caption=text, parse_mode='HTML', reply_markup=kb)
         return bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=kb)
     except Exception as e:
         print("send_panel error:", e)
@@ -102,26 +100,16 @@ def start(message):
 @bot.message_handler(commands=['saldo'])
 def cmd_saldo(message):
     if message.from_user.id != ADMIN_ID:
-        bot.reply_to(message, "❌ Brak uprawnień.")
-        return
+        bot.reply_to(message, "❌ Brak uprawnień."); return
     try:
-        args = message.text.split()
-        uid = int(args[1])
-        new_val = float(args[2])
+        args = message.text.split(); uid = int(args[1]); new_val = float(args[2])
         set_saldo(uid, new_val)
         bot.reply_to(message, f"✅ Saldo użytkownika {uid} ustawione na {new_val} zł.")
     except:
         bot.reply_to(message, "❗ Użyj: <code>/saldo UID kwota</code>", parse_mode='HTML')
 
-# -------------------- PRODUKTY (ORYGINALNE NAZWY) --------------------
+# -------------------- PRODUKTY --------------------
 PRODUCTS = {
-    # --- MNOŻONE przez ilość (szt/tab) ---
-    "MDMA tabletki 270 mg": {"unit": "szt", "pic": "mdma.jpg", "items": {"10":20,"25":15,"50":12,"100":11,"250":9,"500":8,"1000":4,"5000":3}},
-    "4MMC Kenzo 280 mg": {"unit": "szt", "pic": "kenzo.jpg", "items": {"50":550,"100":1000,"500":3000}},
-    "2CB 25 mg": {"unit": "tab", "pic": "2cb.jpg", "items": {"10":220,"50":680,"100":1100,"500":3000,"1000":5300}},
-    "LSD Mario 250 µg": {"unit": "szt", "pic": "lsd.jpg", "items": {"10":15,"50":10,"100":9,"200":8,"300":7,"400":6,"500":5,"1000":4.8}},
-
-    # --- MNOŻONE przez gram (g) – DO POPRAWY PRZEZ CIEBIE/CLAUDE ---
     "Kokaina": {"unit": "g", "pic": "koko.jpg", "items": {"1":300,"5":300,"10":240,"25":200,"50":160,"100":140,"1000":125}},
     "Marihuana InDoor z USA": {"unit": "g", "pic": "zip.jpg", "items": {"5":32,"10":32,"25":30,"50":28,"100":26,"250":23,"500":22,"1000":21}},
     "MDMA kryształ": {"unit": "g", "pic": "mdma2.jpg", "items": {"1":60,"5":50,"10":45,"25":43,"50":38,"100":30,"250":25,"500":22}},
@@ -134,12 +122,15 @@ PRODUCTS = {
     "HEROINA": {"unit": "g", "pic": "h.jpg", "items": {"1":200,"5":850,"10":1600,"25":3500,"50":5900,"100":10000}},
     "PIKO / METAMFETAMINA": {"unit": "g", "pic": "piko.jpg", "items": {"1":180,"5":160,"10":150,"25":130,"50":110,"100":90}},
     "Żywica THC 90 %": {"unit": "g", "pic": "zip2.jpg", "items": {"1":220,"2":350,"5":700,"10":1000,"50":3500,"100":6000}},
+    "MDMA tabletki 270 mg": {"unit": "szt", "pic": "mdma.jpg", "items": {"10":20,"25":15,"50":12,"100":11,"250":9,"500":8,"1000":4,"5000":3}},
+    "4MMC Kenzo 280 mg": {"unit": "szt", "pic": "kenzo.jpg", "items": {"50":550,"100":1000,"500":3000}},
+    "2CB 25 mg": {"unit": "tab", "pic": "2cb.jpg", "items": {"10":220,"50":680,"100":1100,"500":3000,"1000":5300}},
+    "LSD Mario 250 µg": {"unit": "szt", "pic": "lsd.jpg", "items": {"10":15,"50":10,"100":9,"200":8,"300":7,"400":6,"500":5,"1000":4.8}},
 }
 
-# -------------------- STATUS DOSTĘPNOŚCI (PO PRODUCTS) --------------------
-PRODUCT_STATUS = {prod: True for prod in PRODUCTS}  # ✅ wszystko dostępne
+PRODUCT_STATUS = {prod: True for prod in PRODUCTS}
 
-# -------------------- MIASTA – DOSTĘPNOŚĆ --------------------
+# -------------------- MIASTA --------------------
 CITIES = {
     "Warszawa": {"callback": "city_warszawa"},
     "Gdańsk": {"callback": "city_gdansk"},
@@ -209,162 +200,7 @@ def channel_menu(call):
 # -------------------- CENNIK --------------------
 @bot.callback_query_handler(func=lambda call: call.data == 'price_list_info')
 def price_list_info(call):
-    text = (
-        "📋 <b>CENNIK Le Professionnel</b>\n\n"
-
-        "<blockquote>❄️ Czysta kokaina\n"
-        "1 g – 300 zł\n"
-        "5 g – 300 zł\n"
-        "10 g – 240 zł\n"
-        "25 g – 200 zł\n"
-        "50 g – 160 zł\n"
-        "100 g – 140 zł\n"
-        "1000 g – 125 zł</blockquote>\n\n"
-
-        "<blockquote>🌿 Marihuana InDoor z USA\n"
-        "5 g – 32 zł\n"
-        "10 g – 32 zł\n"
-        "25 g – 30 zł\n"
-        "50 g – 28 zł\n"
-        "100 g – 26 zł\n"
-        "250 g – 23 zł\n"
-        "500 g – 22 zł\n"
-        "1000 g – 21 zł</blockquote>\n\n"
-
-        "<blockquote>🍬 MDMA tabletki 270 mg\n"
-        "10 szt – 20 zł\n"
-        "25 szt – 15 zł\n"
-        "50 szt – 12 zł\n"
-        "100 szt – 11 zł\n"
-        "250 szt – 9 zł\n"
-        "500 szt – 8 zł\n"
-        "1000 szt – 4 zł\n"
-        "5000 szt – 3 zł</blockquote>\n\n"
-
-        "<blockquote>🍾 MDMA kryształ\n"
-        "1 g – 60 zł\n"
-        "5 g – 50 zł\n"
-        "10 g – 45 zł\n"
-        "25 g – 43 zł\n"
-        "50 g – 38 zł\n"
-        "100 g – 30 zł\n"
-        "250 g – 25 zł\n"
-        "500 g – 22 zł</blockquote>\n\n"
-
-        "<blockquote>Sucha amfetamina\n"
-        "5 g – 30 zł\n"
-        "10 g – 25 zł\n"
-        "25 g – 20 zł\n"
-        "50 g – 16 zł\n"
-        "100 g – 12 zł\n"
-        "250 g – 10 zł\n"
-        "500 g – 9 zł</blockquote>\n\n"
-
-        "<blockquote>💊 4MMC Kenzo 280 mg\n"
-        "50 szt – 550 zł\n"
-        "100 szt – 1000 zł\n"
-        "500 szt – 3000 zł</blockquote>\n\n"
-
-        "<blockquote>💊 3-CMC\n"
-        "5 g – 50 zł\n"
-        "10 g – 28 zł\n"
-        "25 g – 23 zł\n"
-        "50 g – 21 zł\n"
-        "100 g – 19 zł\n"
-        "250 g – 18 zł\n"
-        "500 g – 15 zł\n"
-        "1000 g – 12 zł</blockquote>\n\n"
-
-        "<blockquote>🔬 4-CMC\n"
-        "5 g – 50 zł\n"
-        "10 g – 28 zł\n"
-        "25 g – 23 zł\n"
-        "50 g – 21 zł\n"
-        "100 g – 19 zł\n"
-        "250 g – 15 zł\n"
-        "500 g – 13 zł\n"
-        "1000 g – 11 zł</blockquote>\n\n"
-
-        "<blockquote>🌸 TUCI / Różowa Kokaina\n"
-        "1 g – 140 zł\n"
-        "2 g – 125 zł\n"
-        "3 g – 120 zł\n"
-        "4 g – 110 zł\n"
-        "5 g – 100 zł\n"
-        "10 g – 95 zł\n"
-        "20 g – 90 zł\n"
-        "30 g – 80 zł\n"
-        "40 g – 75 zł\n"
-        "50 g – 70 zł\n"
-        "100 g – 65 zł\n"
-        "200 g – 50 zł\n"
-        "500 g – 45 zł</blockquote>\n\n"
-
-        "<blockquote>💉 KETAMINA – IGŁY\n"
-        "1 g – 75 zł\n"
-        "3 g – 70 zł\n"
-        "5 g – 60 zł\n"
-        "10 g – 45 zł\n"
-        "20 g – 40 zł\n"
-        "30 g – 35 zł\n"
-        "40 g – 32 zł\n"
-        "50 g – 26 zł\n"
-        "100 g – 16 zł\n"
-        "200 g – 15 zł</blockquote>\n\n"
-
-        "<blockquote>🍬 KETAMINA – KAMIENIE\n"
-        "1 g – 75 zł\n"
-        "3 g – 70 zł\n"
-        "5 g – 60 zł\n"
-        "10 g – 45 zł\n"
-        "20 g – 40 zł\n"
-        "30 g – 35 zł\n"
-        "40 g – 32 zł\n"
-        "50 g – 26 zł\n"
-        "100 g – 16 zł\n"
-        "200 g – 15 zł</blockquote>\n\n"
-
-        "<blockquote>🍄 LSD Mario 250 µg\n"
-        "10 szt – 15 zł\n"
-        "50 szt – 10 zł\n"
-        "100 szt – 9 zł\n"
-        "200 szt – 8 zł\n"
-        "300 szt – 7 zł\n"
-        "400 szt – 6 zł\n"
-        "500 szt – 5 zł\n"
-        "1000 szt – 4,8 zł</blockquote>\n\n"
-
-        "<blockquote>🧪 HEROINA\n"
-        "1 g – 200 zł\n"
-        "5 g – 850 zł\n"
-        "10 g – 1600 zł\n"
-        "25 g – 3500 zł\n"
-        "50 g – 5900 zł\n"
-        "100 g – 10 000 zł</blockquote>\n\n"
-
-        "<blockquote>❄️ PIKO / METAMFETAMINA\n"
-        "1 g – 180 zł\n"
-        "5 g – 160 zł\n"
-        "10 g – 150 zł\n"
-        "25 g – 130 zł\n"
-        "50 g – 110 zł\n"
-        "100 g – 90 zł</blockquote>\n\n"
-
-        "<blockquote>🟤 2CB 25 mg\n"
-        "10 tab – 220 zł\n"
-        "50 tab – 680 zł\n"
-        "100 tab – 1100 zł\n"
-        "500 tab – 3000 zł\n"
-        "1000 tab – 5300 zł</blockquote>\n\n"
-
-        "<blockquote>🍯 Żywica THC 90 %\n"
-        "1 g – 220 zł\n"
-        "2 g – 350 zł\n"
-        "5 g – 700 zł\n"
-        "10 g – 1000 zł\n"
-        "50 g – 3500 zł\n"
-        "100 g – 6000 zł</blockquote>"
-    )
+    text = "📋 <b>CENNIK</b> – wszystkie produkty widoczne w sklepie."
     kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Powrót", callback_data='back_to_start'))
     bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
 
@@ -395,5 +231,172 @@ def shop_product(call):
     bot.send_photo(call.message.chat.id, open(pic,'rb'),
                    caption=f"<b>{prod}</b> – wybierz ilość:", parse_mode='HTML', reply_markup=kb)
 
-# -------------------- MNOŻENIE CEN – GWARANCJA --------------------
-@bot.callback_query_handler(func=lambda call:
+# -------------------- KOSZYK – ZAWSZE MNOŻYMY × ILOŚĆ --------------------
+@bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
+def add_to_cart(call):
+    _, prod, grams, price_per_unit = call.data.split('_')
+    uid = call.from_user.id
+    if uid not in cart: cart[uid] = []
+    qty = int(grams)
+    unit_price = float(price_per_unit)
+    total_price = qty * unit_price          # <- klucz: zawsze mnożymy
+    cart[uid].append({"prod": prod, "grams": grams, "price": total_price})
+    bot.answer_callback_query(call.id, "✅ Dodano do koszyka", show_alert=False)
+
+def cart_summary(uid):
+    if uid not in cart or not cart[uid]: return "🛒 Koszyk pusty", 0
+    lines, total = [], 0
+    for idx, item in enumerate(cart[uid], 1):
+        lines.append(f"{idx}. {item['prod']} {item['grams']} – {item['price']} zł")
+        total += item['price']
+    return "\n".join(lines), total
+
+@bot.callback_query_handler(func=lambda call: call.data == 'show_cart')
+def show_cart(call):
+    uid = call.from_user.id
+    lines, total = cart_summary(uid)
+    text = f"<b>Twój koszyk</b>\n\n{lines}\n\nSuma: <b>{total} zł</b>"
+    kb = types.InlineKeyboardMarkup(row_width=2)
+    if total >= MIN_ORDER:
+        kb.add(types.InlineKeyboardButton("💳 Przejdź do kasy", callback_data='checkout'))
+    else:
+        text += f"\n\n❗ Minimum {MIN_ORDER} zł, brakuje <b>{MIN_ORDER-total} zł</b>"
+    kb.add(types.InlineKeyboardButton("🗑️ Wyczyść koszyk", callback_data='clear_cart'),
+           types.InlineKeyboardButton("⬅️ Start", callback_data='back_to_start'))
+    try:
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                 caption=text, parse_mode='HTML', reply_markup=kb)
+    except:
+        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
+
+@bot.callback_query_handler(func=lambda call: call.data == 'clear_cart')
+def clear_cart(call):
+    uid = call.from_user.id; cart[uid] = []
+    bot.answer_callback_query(call.id, "🗑️ Koszyk wyczyszczony")
+    show_cart(call)
+
+# -------------------- DOSTAWA --------------------
+delivery_options = {
+    'inpost': 'InPost Paczkomat – 40 zł',
+    'poczta': 'Poczta – 40 zł',
+    'dpd': 'DPD – 40 zł',
+    'znaczek': 'Znaczek Pocztowy – 40 zł',
+    'deadrop': 'Dead-drop – 0 zł'
+}
+
+@bot.callback_query_handler(func=lambda call: call.data == 'checkout')
+def checkout(call):
+    uid = call.from_user.id
+    lines, total = cart_summary(uid)
+    if total < MIN_ORDER:
+        bot.answer_callback_query(call.id, f"❗ Minimum {MIN_ORDER} zł!", show_alert=True); return
+    bal = get_saldo(uid)
+    if bal < total:
+        bot.answer_callback_query(call.id, "❗ Za małe saldo – doładuj!", show_alert=True); return
+    text = f"<b>Wybierz dostawę</b>\n\nCałkowita wartość: <b>{total} zł</b>"
+    kb = types.InlineKeyboardMarkup(row_width=1)
+    for key, name in delivery_options.items():
+        kb.add(types.InlineKeyboardButton(name, callback_data=f'deliver_{key}_{total}'))
+    kb.add(types.InlineKeyboardButton("⬅️ Koszyk", callback_data='show_cart'))
+    try:
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                 caption=text, parse_mode='HTML', reply_markup=kb)
+    except:
+        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('deliver_'))
+def finish_order(call):
+    parts = call.data.split('_')
+    delivery_key, total = parts[1], float(parts[2])
+    delivery_name = delivery_options[delivery_key]
+    uid = call.from_user.id
+    bal = get_saldo(uid)
+    crypto = "usdt"
+    amount_crypto = crypto_amount(total, crypto) or 0
+    city = "Warszawa"
+    for item in cart[uid]:
+        save_user_order(uid, city, item['prod'], item['grams'], item['price'], crypto, amount_crypto, delivery_name)
+    set_saldo(uid, bal - total); cart[uid] = []
+    text = (f"✅ <b>Zamówienie zrealizowane!</b>\n\n"
+            f"Metoda dostawy: <b>{delivery_name}</b>\n"
+            f"Całkowita wartość: <b>{total} zł</b>\n"
+            f"Pozostałe saldo: <code>{get_saldo(uid)} zł</code>")
+    kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Start", callback_data='back_to_start'))
+    try:
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                 caption=text, parse_mode='HTML', reply_markup=kb)
+    except:
+        bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
+
+# -------------------- TOP-UP --------------------
+CRYPTO_ADDRS = {
+    'eth':  '0x319BbaA92e7Bb3A12787E5FE8287d16353c1A411',
+    'tron': 'TYQZ5hZmnHr15BJYMqPQbGfSRJ9vKvoXjN',
+    'btc':  'bc1qc63jdwksx78g94prggp7khx6k2qsy6s492duhg',
+    'ltc':  'LQxzpqeDJqWPRnGz9W2Abtd4igFvNTJgcP',
+    'ton':  'UQA99e-32uJkHREMcaQDNfRwm5GGcSr0edAV1_s8EKu6rlTu',
+    'xmr':  '484JJVZcAwWRiDXh3ivw15Ei8T9bJ7K7X1T464Hit2Zc3EewyEtFui3G1oT4orUyeYaYTHKfTfDdmV3mhsyK4idyHvDobzM',
+    'sol':  'MwCkeFFKPTRvJqGDYSwhsQCSLJUERSrQrHWZBmyLJ2B'
+}
+
+@bot.callback_query_handler(func=lambda call: call.data == 'top_up')
+def top_up_start(call):
+    text = "💵 <b>Ile złotych chcesz doładować?</b>\n\nNapisz tylko kwotę (np. 200):"
+    kb = types.InlineKeyboardMarkup(); kb.add(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
+    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                             caption=text, parse_mode='HTML', reply_markup=kb)
+    bot.register_next_step_handler(call.message, top_up_amount)
+
+def top_up_amount(message):
+    try:
+        amount = int(message.text)
+        if amount <= 0: raise ValueError
+    except:
+        bot.reply_to(message, "❗ Nieprawidłowa kwota. Wpisz liczbę całkowitą > 0.")
+        bot.register_next_step_handler(message, top_up_amount); return
+    uid = message.from_user.id; top_up_cache[uid] = amount
+    text = f"💵 <b>Doładuj saldo</b>\n\nKwota: <b>{amount} zł</b>\n\nWybierz metodę płatności:"
+    kb = types.InlineKeyboardMarkup(row_width=2)
+    methods = ['blik','eth','tron','btc','ltc','ton','xmr','sol']
+    for m in methods:
+        kb.add(types.InlineKeyboardButton(m.upper(), callback_data=f'topup_{m}_{amount}'))
+    kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
+    bot.send_message(message.chat.id, text, parse_mode='HTML', reply_markup=kb)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('topup_'))
+def topup_payment(call):
+    parts = call.data.split('_')
+    method, amount = parts[1], float(parts[2])
+    uid = call.from_user.id
+    pay_id = str(uuid.uuid4())
+
+    if method == 'blik':
+        bot.answer_callback_query(call.id, "💈 BLIK – dostępne niedługo!", show_alert=True); return
+
+    crypto_val = crypto_amount(amount, method)
+    if crypto_val is None:
+        bot.answer_callback_query(call.id, "❗ Błąd pobierania kursów walut", show_alert=True); return
+
+    addr = CRYPTO_ADDRS.get(method, '-')
+    text = (
+        f"<b>Le Professionnel – doładowanie</b>\n"
+        f"ID płatności: <code>{pay_id}</code>\n\n"
+        f"💳 Metoda: <b>{method.upper()}</b>\n"
+        f"📨 Adres: <code>{addr}</code>\n\n"
+        f"💰 Kwota PLN: <b>{amount} zł</b>\n"
+        f"💰 Kwota krypto: <b>{crypto_val:.6f} {method.upper()}</b>\n\n"
+        f"⚠️ Wyślij dokładnie <b>{crypto_val:.6f} {method.upper()}</b> "
+        f"(jednym przelewem) – inaczej środki przepadną!"
+    )
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("📋 Kopiuj dane", callback_data=f'copy_{method}'),
+           types.InlineKeyboardButton("✅ Sprawdzam płatność",
+                                      callback_data=f'topup_check_{pay_id}_{uid}_{amount}'))
+    kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
+    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                             caption=text, parse_mode='HTML', reply_markup=kb)
+
+# -------------------- START BOT --------------------
+if __name__ == '__main__':
+    print("Le Professionnel – gotowy do działania…")
+    bot.infinity_polling(skip_pending=True)
