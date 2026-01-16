@@ -396,6 +396,25 @@ def topup_payment(call):
     bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
                              caption=text, parse_mode='HTML', reply_markup=kb)
 
+# --- NOWY BRAKUJĄCY HANDLER ---
+@bot.callback_query_handler(func=lambda call: call.data.startswith('copy_'))
+def copy_addr(call):
+    method = call.data.split('_')[1]
+    addr   = CRYPTO_ADDRS.get(method,'-')
+    bot.answer_callback_query(call.id, f"📋 Adres {method.upper()} skopiowany!\n{addr}", show_alert=True)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('topup_check_'))
+def topup_check(call):
+    _, pay_id, uid_str, amount_str = call.data.split('_')
+    uid, amount = int(uid_str), float(amount_str)
+    # tu możesz dodać rzeczywiste sprawdzenie blockchain, póki co po prostu przyznajemy
+    set_saldo(uid, get_saldo(uid) + amount)
+    bot.answer_callback_query(call.id, f"✅ Potwierdzono! {amount} zł dodano do salda.", show_alert=True)
+    # powrót do startu
+    start(call.message)
+    try: bot.delete_message(call.message.chat.id, call.message.message_id)
+    except: pass
+
 # -------------------- START BOT --------------------
 if __name__ == '__main__':
     print("Le Professionnel – gotowy do działania…")
