@@ -3,7 +3,7 @@ from telebot import types
 import uuid, os, json, time
 
 TOKEN        = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
-ADMIN_ID     = 6029446099
+ADMIN_ID     = 8533097516
 FALLBACK_PIC = 'leprofessionnel.jpg'
 MAIN_CHAN    = 'https://t.me/+8VLpDp5-Cqc4OTI0  '
 OPINIE_CHAN  = 'https://t.me/c/3635144020/28  '
@@ -393,10 +393,11 @@ def topup_payment(call):
            types.InlineKeyboardButton("✅ Sprawdzam płatność",
                                       callback_data=f'topup_check_{pay_id}_{uid}_{amount}'))
     kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
-    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                             caption=text, parse_mode='HTML', reply_markup=kb)
+    # ⬇️ ZWYKŁA WIADOMOŚĆ – przyciski się ładują
+    bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
+    try: bot.delete_message(call.message.chat.id, call.message.message_id)
+    except: pass
 
-# --- NOWY BRAKUJĄCY HANDLER ---
 @bot.callback_query_handler(func=lambda call: call.data.startswith('copy_'))
 def copy_addr(call):
     method = call.data.split('_')[1]
