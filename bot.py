@@ -5,8 +5,8 @@ import uuid, os, json, time
 TOKEN        = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
 ADMIN_ID     = 8533097516
 FALLBACK_PIC = 'leprofessionnel.jpg'
-MAIN_CHAN    = 'https://t.me/+8VLpDp5-Cqc4OTI0  '
-OPINIE_CHAN  = 'https://t.me/c/3635144020/28  '
+MAIN_CHAN    = 'https://t.me/+F0JbIucarpc2OTA8  '
+OPINIE_CHAN  = 'https://t.me/+nvppMV2_11BjYjY0  '
 CONTACT_USER = '@LeProfessionnel_operator'
 
 bot = telebot.TeleBot(TOKEN)
@@ -420,3 +420,4 @@ def topup_check(call):
 if __name__ == '__main__':
     print("Le Professionnel – gotowy do działania…")
     bot.infinity_polling(skip_pending=True)
+
