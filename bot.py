@@ -3,10 +3,10 @@ from telebot import types
 import uuid, os, json, time
 
 TOKEN        = '7870656606:AAHZDaDqOA0d3FYUEKdmcXbjJIUhtNmCktQ'
-ADMIN_ID     = 8533097516
+ADMIN_ID     = 6029446099
 FALLBACK_PIC = 'leprofessionnel.jpg'
-MAIN_CHAN    = 'https://t.me/+F0JbIucarpc2OTA8  '
-OPINIE_CHAN  = 'https://t.me/+nvppMV2_11BjYjY0  '
+MAIN_CHAN    = 'https://t.me/+8VLpDp5-Cqc4OTI0  '
+OPINIE_CHAN  = 'https://t.me/c/3635144020/28  '
 CONTACT_USER = '@LeProfessionnel_operator'
 
 bot = telebot.TeleBot(TOKEN)
@@ -107,6 +107,24 @@ def cmd_saldo(message):
         bot.reply_to(message, f"✅ Saldo użytkownika {uid} ustawione na {new_val} zł.")
     except:
         bot.reply_to(message, "❗ Użyj: <code>/saldo UID kwota</code>", parse_mode='HTML')
+
+# -------------------- NOWA KOMENDA /wiadomosc (tylko ADMIN) --------------------
+@bot.message_handler(commands=['wiadomosc'])
+def admin_msg(message):
+    if message.from_user.id != ADMIN_ID:
+        bot.reply_to(message, "❌ Brak uprawnień."); return
+    try:
+        args = message.text.split(' ', 2)
+        target_uid = int(args[1])
+        text = args[2]
+    except (IndexError, ValueError):
+        bot.reply_to(message, "❗ Użyj: <code>/wiadomosc ID tekst</code>", parse_mode='HTML'); return
+
+    try:
+        bot.send_message(target_uid, text, parse_mode='HTML')
+        bot.reply_to(message, f"✅ Wiadomość wysłana do użytkownika {target_uid}.")
+    except Exception as e:
+        bot.reply_to(message, f"❌ Błąd wysyłki: {e}")
 
 # -------------------- PRODUKTY --------------------
 PRODUCTS = {
@@ -393,7 +411,6 @@ def topup_payment(call):
            types.InlineKeyboardButton("✅ Sprawdzam płatność",
                                       callback_data=f'topup_check_{pay_id}_{uid}_{amount}'))
     kb.row(types.InlineKeyboardButton("⬅️ Anuluj", callback_data='back_to_start'))
-    # ⬇️ ZWYKŁA WIADOMOŚĆ – przyciski się ładują
     bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=kb)
     try: bot.delete_message(call.message.chat.id, call.message.message_id)
     except: pass
@@ -408,10 +425,8 @@ def copy_addr(call):
 def topup_check(call):
     _, pay_id, uid_str, amount_str = call.data.split('_')
     uid, amount = int(uid_str), float(amount_str)
-    # tu możesz dodać rzeczywiste sprawdzenie blockchain, póki co po prostu przyznajemy
     set_saldo(uid, get_saldo(uid) + amount)
     bot.answer_callback_query(call.id, f"✅ Potwierdzono! {amount} zł dodano do salda.", show_alert=True)
-    # powrót do startu
     start(call.message)
     try: bot.delete_message(call.message.chat.id, call.message.message_id)
     except: pass
@@ -420,4 +435,3 @@ def topup_check(call):
 if __name__ == '__main__':
     print("Le Professionnel – gotowy do działania…")
     bot.infinity_polling(skip_pending=True)
-
